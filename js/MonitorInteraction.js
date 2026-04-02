@@ -310,6 +310,8 @@ export class MonitorInteraction {
 
     scene.traverse((obj) => {
       if (!obj.isMesh || !obj.material) return;
+      const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+      if (mats.some((m) => m.isShaderMaterial)) return;
       if (Array.isArray(obj.material)) {
         const clonedArr = obj.material.map((m) => {
           const c = m.clone();
@@ -412,13 +414,14 @@ export class MonitorInteraction {
     for (let i = 0; i < entries.length; i++) {
       const e = entries[i];
       if (protectedGroup && this._isDescendantOf(e.mesh, protectedGroup)) {
-        e.mat.color.copy(e.origColor);
+        if (e.mat.color) e.mat.color.copy(e.origColor);
         if (e.mat.map !== e.origMap) {
           e.mat.map = e.origMap;
           e.mat.needsUpdate = true;
         }
         continue;
       }
+      if (!e.mat.color) continue;
       e.mat.color.r = e.origColor.r + (AO_WHITE.r - e.origColor.r) * amt;
       e.mat.color.g = e.origColor.g + (AO_WHITE.g - e.origColor.g) * amt;
       e.mat.color.b = e.origColor.b + (AO_WHITE.b - e.origColor.b) * amt;
