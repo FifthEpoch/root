@@ -14,8 +14,7 @@ const hint = document.getElementById('controls-hint');
 
 const isRestore = new URLSearchParams(window.location.search).get('restore') === '1';
 if (isRestore) {
-  overlay.style.transition = 'none';
-  overlay.classList.add('hidden');
+  overlay.style.display = 'none';
 }
 
 // Landing video: ping-pong playback (forward → reverse → forward …)

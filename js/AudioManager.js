@@ -5,6 +5,7 @@ export class AudioManager {
     this._muted = false;
     this._started = false;
     this._ready = false;
+    this._unlocked = false;
 
     this._ambience = new Audio('media/aud/ambience_room.mp3');
     this._ambience.loop = true;
@@ -37,40 +38,58 @@ export class AudioManager {
       if (!this._started || this._muted) return;
       if (document.hidden) {
         this._ambience.pause();
-      } else if (this._ready) {
+        if (this._serverPlaying) this._serverNoise.pause();
+        if (this._footPlaying) this._footsteps.pause();
+        if (this._distPlaying) this._distortion.pause();
+      } else if (this._ready && this._unlocked) {
         this._ambience.play().catch(() => {});
+        if (this._serverPlaying) this._serverNoise.play().catch(() => {});
+        if (this._footPlaying) this._footsteps.play().catch(() => {});
+        if (this._distPlaying) this._distortion.play().catch(() => {});
       }
     });
   }
 
-  /**
-   * Called from a user-gesture context (button click).
-   * Uses AudioContext to unlock iOS audio, then starts ambience only.
-   * Other sounds play on-demand in update().
-   */
   start() {
     if (this._started) return;
     this._started = true;
-
-    // Unlock audio on iOS by resuming an AudioContext from user gesture.
-    // Do NOT use createMediaElementSource — it reroutes output away from speakers.
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    if (AudioCtx) {
-      const ctx = new AudioCtx();
-      // Play a tiny silent buffer to fully unlock audio output
-      const buf = ctx.createBuffer(1, 1, 22050);
-      const src = ctx.createBufferSource();
-      src.buffer = buf;
-      src.connect(ctx.destination);
-      src.start(0);
-      ctx.resume().catch(() => {});
-    }
-
     this._ready = true;
+
+    // Try to start ambience immediately
     if (!this._muted) {
       this._ambience.volume = 0;
-      this._ambience.play().catch(() => {});
+      const p = this._ambience.play();
+      if (p) {
+        p.then(() => {
+          this._unlocked = true;
+        }).catch(() => {
+          // Autoplay blocked — wait for any user interaction to unlock
+          this._setupUnlockListener();
+        });
+      }
+    } else {
+      this._unlocked = true;
     }
+  }
+
+  _setupUnlockListener() {
+    const unlock = () => {
+      if (this._unlocked) return;
+      this._unlocked = true;
+      document.removeEventListener('click', unlock, true);
+      document.removeEventListener('touchstart', unlock, true);
+      document.removeEventListener('touchend', unlock, true);
+      document.removeEventListener('keydown', unlock, true);
+
+      if (!this._muted) {
+        this._ambience.volume = 0;
+        this._ambience.play().catch(() => {});
+      }
+    };
+    document.addEventListener('click', unlock, { capture: true, once: false });
+    document.addEventListener('touchstart', unlock, { capture: true, once: false });
+    document.addEventListener('touchend', unlock, { capture: true, once: false });
+    document.addEventListener('keydown', unlock, { capture: true, once: false });
   }
 
   toggleMute() {
@@ -87,7 +106,7 @@ export class AudioManager {
       this._footPlaying = false;
       this._distPlaying = false;
       this._serverPlaying = false;
-    } else if (this._started && this._ready) {
+    } else if (this._started && this._ready && this._unlocked) {
       this._ambience.volume = 0;
       this._ambience.play().catch(() => {});
     }
@@ -99,7 +118,7 @@ export class AudioManager {
   }
 
   update(dt, isWalking, isHovering) {
-    if (!this._started || !this._ready || this._muted) return;
+    if (!this._started || !this._ready || !this._unlocked || this._muted) return;
 
     // ── 1. Ambience: always playing, smooth fade-in ──
     if (this._ambience.paused && !document.hidden) {
