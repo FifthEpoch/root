@@ -209,4 +209,15 @@ export const projects = [
       ),
     ],
   },
+  {
+    title: 'Sculpture Work',
+    subtitle:
+      'Started with modeling a strange creature with polycephaly, a condition where an animal grew more than one head. This body of work was shown in various group exhibits in 2019 and 2022.',
+    links: [],
+    media: Array.from({ length: 11 }, (_, i) =>
+      `${R2}projects/past-sculptures/images/${String(i).padStart(2, '0')}.jpg`
+    ),
+    captions: [],
+    sections: [],
+  },
 ];

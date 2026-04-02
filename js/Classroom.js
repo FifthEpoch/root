@@ -837,7 +837,7 @@ function buildSkeletonChair(scene, gltf) {
   const hw = ROOM_WIDTH / 2 + 2;
   const hd = ROOM_DEPTH / 2 + 2;
   group.position.set(hw - 1.2, 0, hd - 1.0);
-  group.rotation.y = -Math.PI * 0.65;
+  group.rotation.y = -Math.PI * 0.65 - (20 * Math.PI / 180);
 
   scene.add(group);
 

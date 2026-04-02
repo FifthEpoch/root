@@ -245,10 +245,35 @@ async function init() {
   const skelRaycaster = new THREE.Raycaster();
   let skelHovered = false;
   const SKEL_HOVER_RANGE = 4.5;
+  const SKEL_PROJECT_ID = 6;
   const accordionAudio = new Audio('media/aud/accordion-high-pitch.mp3');
   accordionAudio.loop = true;
   accordionAudio.volume = 0;
   let accordionPlaying = false;
+
+  const handleSkelClick = () => {
+    if (skelHovered && !monitorInteraction.isViewing && !monitorInteraction.isTransitioning) {
+      sessionStorage.setItem('labCamera', JSON.stringify({
+        x: camera.position.x, y: camera.position.y, z: camera.position.z,
+        yaw: controls.yaw, pitch: controls.pitch,
+      }));
+      window.location.href = `project.html?id=${SKEL_PROJECT_ID}`;
+    }
+  };
+  canvas.addEventListener('click', handleSkelClick);
+  if (isMobile) {
+    let skelTapStart = null;
+    canvas.addEventListener('touchstart', (e) => {
+      skelTapStart = { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY, t: performance.now() };
+    });
+    canvas.addEventListener('touchend', (e) => {
+      if (!skelTapStart) return;
+      const t = e.changedTouches[0];
+      const d = Math.sqrt((t.clientX - skelTapStart.x) ** 2 + (t.clientY - skelTapStart.y) ** 2);
+      if (d < 15 && performance.now() - skelTapStart.t < 300) handleSkelClick();
+      skelTapStart = null;
+    });
+  }
 
   const clock = new THREE.Clock();
 
