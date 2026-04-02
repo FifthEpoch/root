@@ -5,7 +5,6 @@ export class AudioManager {
     this._muted = false;
     this._started = false;
     this._ready = false;
-    this._startTime = 0;
 
     this._ambience = new Audio('media/aud/ambience_room.mp3');
     this._ambience.loop = true;
@@ -32,15 +31,26 @@ export class AudioManager {
     this._footPlaying = false;
     this._distPlaying = false;
     this._serverPlaying = false;
+
+    // Pause ambience when tab is hidden, resume when visible
+    document.addEventListener('visibilitychange', () => {
+      if (!this._started || this._muted) return;
+      if (document.hidden) {
+        this._ambience.pause();
+      } else if (this._ready) {
+        this._ambience.play().catch(() => {});
+      }
+    });
   }
 
   start() {
     if (this._started) return;
     this._started = true;
-    this._startTime = performance.now();
 
-    // Pre-warm: mute at browser level (guaranteed silent), briefly play, then pause.
-    const warm = (el) => {
+    const all = [this._ambience, this._serverNoise, this._footsteps, this._distortion];
+
+    // Pre-warm all audio elements (muted, zero volume) then immediately pause.
+    const warmups = all.map((el) => {
       el.muted = true;
       el.volume = 0;
       return el.play().then(() => {
@@ -49,15 +59,11 @@ export class AudioManager {
         el.muted = false;
         el.volume = 0;
       }).catch(() => { el.muted = false; });
-    };
+    });
 
-    Promise.all([
-      warm(this._ambience),
-      warm(this._serverNoise),
-      warm(this._footsteps),
-      warm(this._distortion),
-    ]).then(() => {
+    Promise.all(warmups).then(() => {
       this._ready = true;
+      // Start ambience immediately after warm-up
       if (!this._muted) {
         this._ambience.volume = 0;
         this._ambience.play().catch(() => {});
@@ -79,8 +85,8 @@ export class AudioManager {
       this._footPlaying = false;
       this._distPlaying = false;
       this._serverPlaying = false;
-    } else if (this._started) {
-      this._ambience.volume = this._targetAmbienceVol;
+    } else if (this._started && this._ready) {
+      this._ambience.volume = 0;
       this._ambience.play().catch(() => {});
     }
     return this._muted;
@@ -93,16 +99,39 @@ export class AudioManager {
   update(dt, isWalking, isHovering) {
     if (!this._started || !this._ready || this._muted) return;
 
-    // Grace period: ignore first 1500ms after start so pre-warm settles
-    // and initial spawn-position hover raycasts don't trigger distortion
-    if (performance.now() - this._startTime < 1500) return;
-
-    const camPos = this._camera.position;
-
-    // Ambience: always on, fade in
+    // ── 1. Ambience: always playing, smooth fade-in ──
+    if (this._ambience.paused) {
+      this._ambience.volume = 0;
+      this._ambience.play().catch(() => {});
+    }
     this._ambience.volume = this._lerp(this._ambience.volume, this._targetAmbienceVol, dt * 2.0);
 
-    // Server noise: proximity-based
+    // ── 2. Footsteps: only while walking ──
+    if (isWalking && !this._footPlaying) {
+      this._footsteps.currentTime = 0;
+      this._footsteps.volume = this._footstepVol;
+      this._footsteps.play().catch(() => {});
+      this._footPlaying = true;
+    } else if (!isWalking && this._footPlaying) {
+      this._footsteps.pause();
+      this._footsteps.volume = 0;
+      this._footPlaying = false;
+    }
+
+    // ── 3. Hover distortion: restart from beginning on each new hover ──
+    if (isHovering && !this._distPlaying) {
+      this._distortion.currentTime = 0;
+      this._distortion.volume = this._distortionVol;
+      this._distortion.play().catch(() => {});
+      this._distPlaying = true;
+    } else if (!isHovering && this._distPlaying) {
+      this._distortion.pause();
+      this._distortion.volume = 0;
+      this._distPlaying = false;
+    }
+
+    // ── 4. Server noise: proximity-based volume ──
+    const camPos = this._camera.position;
     const dx = camPos.x - this._rackPos.x;
     const dz = camPos.z - this._rackPos.z;
     const dist = Math.sqrt(dx * dx + dz * dz);
@@ -119,30 +148,6 @@ export class AudioManager {
     }
     if (this._serverPlaying) {
       this._serverNoise.volume = this._lerp(this._serverNoise.volume, serverTarget, dt * 3.0);
-    }
-
-    // Footsteps: play/pause based on walking state
-    if (isWalking && !this._footPlaying) {
-      this._footsteps.currentTime = 0;
-      this._footsteps.volume = this._footstepVol;
-      this._footsteps.play().catch(() => {});
-      this._footPlaying = true;
-    } else if (!isWalking && this._footPlaying) {
-      this._footsteps.pause();
-      this._footsteps.volume = 0;
-      this._footPlaying = false;
-    }
-
-    // Distortion: play/pause based on hover state
-    // Don't reset currentTime to avoid audio glitches on repeated triggers
-    if (isHovering && !this._distPlaying) {
-      this._distortion.volume = this._distortionVol;
-      this._distortion.play().catch(() => {});
-      this._distPlaying = true;
-    } else if (!isHovering && this._distPlaying) {
-      this._distortion.pause();
-      this._distortion.volume = 0;
-      this._distPlaying = false;
     }
   }
 

@@ -105,7 +105,7 @@ async function init() {
   scene.add(fallShaft);
 
   const SHAFT_W = 3.5;
-  const SHAFT_H = 80;
+  const SHAFT_H = 200;
   const SHAFT_D = 3.5;
   const shaftVoidMat = door.voidMat.clone();
   shaftVoidMat.uniforms = { uTime: { value: 0 } };
@@ -124,9 +124,16 @@ async function init() {
     fallShaft.add(w);
   }
 
+  // Bottom cap so the shaft has visible depth when looking down
+  const shaftFloorGeo = new THREE.PlaneGeometry(SHAFT_W, SHAFT_D);
+  const shaftFloor = new THREE.Mesh(shaftFloorGeo, shaftVoidMat);
+  shaftFloor.position.set(0, -SHAFT_H, 0);
+  shaftFloor.rotation.x = Math.PI / 2;
+  fallShaft.add(shaftFloor);
+
   // Glass panes at staggered depths for refraction/depth cues
   const glassPanes = [];
-  for (let i = 0; i < 14; i++) {
+  for (let i = 0; i < 20; i++) {
     const pw = SHAFT_W * (0.35 + Math.random() * 0.55);
     const pd = SHAFT_D * (0.25 + Math.random() * 0.45);
     const paneGeo = new THREE.PlaneGeometry(pw, pd);
@@ -140,7 +147,7 @@ async function init() {
       depthWrite: false,
     });
     const pane = new THREE.Mesh(paneGeo, glassMat);
-    const y = -1.5 - i * 5 - Math.random() * 2;
+    const y = -1.5 - i * 7 - Math.random() * 3;
     pane.position.set(
       (Math.random() - 0.5) * SHAFT_W * 0.4,
       y,
@@ -152,6 +159,24 @@ async function init() {
     fallShaft.add(pane);
     glassPanes.push(pane);
   }
+
+  // White-out overlay for end-of-fall flash
+  const whiteOverlayGeo = new THREE.PlaneGeometry(2, 2);
+  const whiteOverlayMat = new THREE.MeshBasicMaterial({
+    color: 0xffffff, transparent: true, opacity: 0, depthTest: false, depthWrite: false,
+  });
+  const whiteOverlay = new THREE.Mesh(whiteOverlayGeo, whiteOverlayMat);
+  whiteOverlay.renderOrder = 9999;
+  whiteOverlay.frustumCulled = false;
+
+  // Fall phases: 'falling' → 'whiteout' → 'dropin'
+  const FALL_DUR = 3.5;
+  const WHITEOUT_RAMP = 0.4;
+  const WHITEOUT_HOLD = 0.8;
+  const DROPIN_DUR = 0.6;
+  let doorFallPhase = 'falling';
+  let whiteoutTime = 0;
+  let dropinTime = 0;
 
   const controls = new NavigationControls(camera, canvas, {
     minZ: -roomDepth / 2,
@@ -375,8 +400,7 @@ async function init() {
     screenController.update(elapsed);
 
     const isHovering = !!monitorInteraction.hoveredScreen && !monitorInteraction.isViewing && !monitorInteraction.isTransitioning;
-    const hoverAudio = isHovering && (!isMobile || controls.hasInteracted);
-    audioManager.update(dt, controls.isWalking, hoverAudio);
+    audioManager.update(dt, controls.isWalking, isHovering);
 
     for (const led of leds) {
       if (rackHovered) {
@@ -509,60 +533,110 @@ async function init() {
 
     // Easter-egg door
     if (doorFalling) {
-      doorFallTime += dt;
       shaftVoidMat.uniforms.uTime.value = elapsed;
 
-      // Quadratic fall through the static shaft
-      const fallY = doorFallStartY - doorFallTime * doorFallTime * 6;
-      camera.position.set(doorFallStartPos.x, fallY, doorFallStartPos.z);
+      if (doorFallPhase === 'falling') {
+        doorFallTime += dt;
 
-      // Position shaft so its top aligns with the fall start
-      fallShaft.position.set(doorFallStartPos.x, doorFallStartY, doorFallStartPos.z);
+        const fallY = doorFallStartY - doorFallTime * doorFallTime * 4.5;
+        camera.position.set(doorFallStartPos.x, fallY, doorFallStartPos.z);
+        fallShaft.position.set(doorFallStartPos.x, doorFallStartY, doorFallStartPos.z);
 
-      // Gentle tumble
-      const rollQ = new THREE.Quaternion().setFromAxisAngle(
-        new THREE.Vector3(0, 0, 1), doorFallTime * 0.8
-      );
-      const baseQ = new THREE.Quaternion().setFromEuler(
-        new THREE.Euler(-Math.PI * 0.35 - doorFallTime * 0.15, controls.yaw, 0, 'YXZ')
-      );
-      camera.quaternion.copy(baseQ).multiply(rollQ);
+        const rollQ = new THREE.Quaternion().setFromAxisAngle(
+          new THREE.Vector3(0, 0, 1), doorFallTime * 0.8
+        );
+        const baseQ = new THREE.Quaternion().setFromEuler(
+          new THREE.Euler(-Math.PI * 0.35 - doorFallTime * 0.12, controls.yaw, 0, 'YXZ')
+        );
+        camera.quaternion.copy(baseQ).multiply(rollQ);
 
-      // Fade glass panes as player falls past them
-      for (const p of glassPanes) {
-        const worldY = fallShaft.position.y + p.userData.baseY;
-        const dy = camera.position.y - worldY;
-        const vis = 1.0 - Math.min(Math.abs(dy) / 8, 1.0);
-        p.material.opacity = (0.08 + Math.random() * 0.04) * vis + 0.02;
-      }
-
-      if (doorFallTime > 2.0) {
-        doorFalling = false;
-        fallShaft.visible = false;
-        scene.background = new THREE.Color(0xd0c8b8);
-        camera.position.copy(SPAWN_POS);
-        controls.yaw = SPAWN_YAW;
-        controls.pitch = SPAWN_PITCH;
-        controls._applyRotation();
-        controls.enabled = true;
-        controls.minZ = -roomDepth / 2;
-        controls.maxZ = roomDepth / 2 + 1;
-        controls.minX = -roomWidth / 2 + 0.5;
-        controls.maxX = roomWidth / 2 - 0.3;
-        // Relocate door to random allowed wall position
-        const wall = door.allowedWalls[Math.floor(Math.random() * door.allowedWalls.length)];
-        const along = wall.min + Math.random() * (wall.max - wall.min);
-        if (wall.axis === 'z') {
-          door.group.position.set(along, 0, wall.coord);
-        } else {
-          door.group.position.set(wall.coord, 0, along);
+        for (const p of glassPanes) {
+          const worldY = fallShaft.position.y + p.userData.baseY;
+          const dy = camera.position.y - worldY;
+          const vis = 1.0 - Math.min(Math.abs(dy) / 8, 1.0);
+          p.material.opacity = (0.08 + Math.random() * 0.04) * vis + 0.02;
         }
-        door.group.rotation.y = wall.rotY;
-        door.doorAngle = 0;
-        door.targetAngle = 0;
-        door.panelPivot.rotation.y = 0;
-        door.wallPatch.visible = true;
-        door.isOpen = false;
+
+        // Near end of fall, begin white ramp
+        const rampStart = FALL_DUR - WHITEOUT_RAMP;
+        if (doorFallTime > rampStart) {
+          const rampT = Math.min((doorFallTime - rampStart) / WHITEOUT_RAMP, 1.0);
+          const eased = rampT * rampT * (3 - 2 * rampT);
+          whiteOverlayMat.opacity = eased;
+          if (!whiteOverlay.parent) camera.add(whiteOverlay);
+          whiteOverlay.position.set(0, 0, -0.1);
+        }
+
+        if (doorFallTime >= FALL_DUR) {
+          doorFallPhase = 'whiteout';
+          whiteoutTime = 0;
+          whiteOverlayMat.opacity = 1;
+          fallShaft.visible = false;
+        }
+
+      } else if (doorFallPhase === 'whiteout') {
+        whiteoutTime += dt;
+        whiteOverlayMat.opacity = 1;
+        scene.background = new THREE.Color(0xffffff);
+
+        if (whiteoutTime >= WHITEOUT_HOLD) {
+          doorFallPhase = 'dropin';
+          dropinTime = 0;
+          scene.background = new THREE.Color(0xd0c8b8);
+
+          // Relocate door
+          const wall = door.allowedWalls[Math.floor(Math.random() * door.allowedWalls.length)];
+          const along = wall.min + Math.random() * (wall.max - wall.min);
+          if (wall.axis === 'z') {
+            door.group.position.set(along, 0, wall.coord);
+          } else {
+            door.group.position.set(wall.coord, 0, along);
+          }
+          door.group.rotation.y = wall.rotY;
+          door.doorAngle = 0;
+          door.targetAngle = 0;
+          door.panelPivot.rotation.y = 0;
+          door.wallPatch.visible = true;
+          door.isOpen = false;
+
+          // Set camera above spawn for drop-in
+          controls.yaw = SPAWN_YAW;
+          controls.pitch = SPAWN_PITCH;
+          controls._applyRotation();
+          camera.position.set(SPAWN_POS.x, SPAWN_POS.y + 1.8, SPAWN_POS.z);
+        }
+
+      } else if (doorFallPhase === 'dropin') {
+        dropinTime += dt;
+        const t = Math.min(dropinTime / DROPIN_DUR, 1.0);
+        const eased = t < 0.5
+          ? 4 * t * t * t
+          : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+        // Fade out white overlay
+        whiteOverlayMat.opacity = 1 - eased;
+
+        // Drop camera from above into spawn
+        const dropY = SPAWN_POS.y + 1.8 * (1 - eased);
+        camera.position.set(SPAWN_POS.x, dropY, SPAWN_POS.z);
+        controls.yaw = SPAWN_YAW;
+        controls.pitch = SPAWN_PITCH + (1 - eased) * -0.15;
+        controls._applyRotation();
+
+        if (t >= 1.0) {
+          doorFalling = false;
+          doorFallPhase = 'falling';
+          whiteOverlayMat.opacity = 0;
+          if (whiteOverlay.parent) camera.remove(whiteOverlay);
+          camera.position.copy(SPAWN_POS);
+          controls.pitch = SPAWN_PITCH;
+          controls._applyRotation();
+          controls.enabled = true;
+          controls.minZ = -roomDepth / 2;
+          controls.maxZ = roomDepth / 2 + 1;
+          controls.minX = -roomWidth / 2 + 0.5;
+          controls.maxX = roomWidth / 2 - 0.3;
+        }
       }
     } else {
       const doorWorldPos = new THREE.Vector3();
@@ -594,11 +668,13 @@ async function init() {
         const localPos = door.group.worldToLocal(camera.position.clone());
         if (localPos.z < -0.15 && Math.abs(localPos.x) < door.DOOR_W / 2 + 0.3) {
           doorFalling = true;
+          doorFallPhase = 'falling';
           doorFallTime = 0;
           doorFallStartY = camera.position.y;
           doorFallStartPos.copy(camera.position);
           controls.enabled = false;
           scene.background = new THREE.Color(0x0a0a10);
+          whiteOverlayMat.opacity = 0;
           fallShaft.visible = true;
         }
       }
