@@ -262,7 +262,7 @@ async function init() {
     screenController.update(elapsed);
 
     const isHovering = !!monitorInteraction.hoveredScreen && !monitorInteraction.isViewing && !monitorInteraction.isTransitioning;
-    audioManager.update(dt, controls.isWalking, isHovering || skelHovered);
+    audioManager.update(dt, controls.isWalking, isHovering);
 
     for (const led of leds) {
       if (rackHovered) {
@@ -393,15 +393,23 @@ async function init() {
     // Easter-egg door
     if (doorFalling) {
       doorFallTime += dt;
-      camera.position.y = doorFallStartY - doorFallTime * doorFallTime * 12;
+      camera.position.y = doorFallStartY - doorFallTime * doorFallTime * 6;
       const rollQ = new THREE.Quaternion().setFromAxisAngle(
-        new THREE.Vector3(0, 0, 1), doorFallTime * 1.5
+        new THREE.Vector3(0, 0, 1), doorFallTime * 1.2
       );
       const baseQ = new THREE.Quaternion().setFromEuler(
-        new THREE.Euler(controls.pitch - doorFallTime * 0.4, controls.yaw, 0, 'YXZ')
+        new THREE.Euler(controls.pitch - doorFallTime * 0.3, controls.yaw, 0, 'YXZ')
       );
       camera.quaternion.copy(baseQ).multiply(rollQ);
-      if (doorFallTime > 1.0) {
+
+      // Shift background color gradually darker during fall for depth cue
+      const t = Math.min(doorFallTime / 2.0, 1.0);
+      const r = 0.0;
+      const g = 0.0 + 0.02 * (1.0 - t);
+      const b = 0.667 - 0.35 * t;
+      scene.background.setRGB(r, g, b);
+
+      if (doorFallTime > 2.0) {
         doorFalling = false;
         scene.background = new THREE.Color(0xd0c8b8);
         camera.position.copy(SPAWN_POS);
@@ -426,6 +434,7 @@ async function init() {
         door.doorAngle = 0;
         door.targetAngle = 0;
         door.panelPivot.rotation.y = 0;
+        door.wallPatch.visible = true;
         door.isOpen = false;
       }
     } else {
@@ -438,6 +447,9 @@ async function init() {
       door.doorAngle += (door.targetAngle - door.doorAngle) * Math.min(dt * 3.0, 1.0);
       door.panelPivot.rotation.y = door.doorAngle;
       door.isOpen = Math.abs(door.doorAngle) > 0.3;
+
+      // Hide wall patch when door opens to reveal the blue void
+      door.wallPatch.visible = Math.abs(door.doorAngle) < 0.05;
 
       // Expand room bounds near open door so player can walk through
       if (door.isOpen && doorDist < door.OPEN_DIST + 1) {

@@ -817,8 +817,8 @@ function buildSkeletonChair(scene, gltf) {
 
   const model = gltf.scene.clone(true);
 
-  // Model bounds: Y 0–1.8. Clip above Y=1.35 to remove the smaller mass on top.
-  const clipPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 1.35);
+  // Model bounds: Y 0–1.8. Clip just below the very top to remove the small extra mass.
+  const clipPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 1.68);
   model.traverse((child) => {
     if (child.isMesh && child.material) {
       const mats = Array.isArray(child.material) ? child.material : [child.material];
@@ -1021,12 +1021,24 @@ function buildDoor(scene) {
   knob.position.set(DOOR_W - 0.08, DOOR_H * 0.47, 0.1);
   panelPivot.add(knob);
 
-  // Blue void behind the doorway
+  // Blue void behind the doorway — sits behind the wall to show through
   const voidMat = new THREE.MeshBasicMaterial({ color: 0x0000aa, side: THREE.DoubleSide });
-  const voidGeo = new THREE.PlaneGeometry(DOOR_W, DOOR_H);
+  const voidGeo = new THREE.PlaneGeometry(DOOR_W + 0.02, DOOR_H + 0.02);
   const voidPlane = new THREE.Mesh(voidGeo, voidMat);
-  voidPlane.position.set(0, DOOR_H / 2, -0.15);
+  voidPlane.position.set(0, DOOR_H / 2, -0.25);
   group.add(voidPlane);
+
+  // Wall patch that covers the real wall behind the doorway. Renders on top
+  // of the room wall so the void is hidden when the door is closed. The patch
+  // is removed from the group during the open animation so the void shows.
+  const wallPatchMat = new THREE.MeshStandardMaterial({
+    color: 0xd2c9b8, roughness: 0.85, metalness: 0.0,
+  });
+  const wallPatchGeo = new THREE.PlaneGeometry(DOOR_W + FRAME_T * 2 + 0.04, DOOR_H + FRAME_T + 0.04);
+  const wallPatch = new THREE.Mesh(wallPatchGeo, wallPatchMat);
+  wallPatch.position.set(0, DOOR_H / 2, 0.01);
+  wallPatch.renderOrder = 1;
+  group.add(wallPatch);
 
   scene.add(group);
 
@@ -1039,6 +1051,7 @@ function buildDoor(scene) {
   return {
     group,
     panelPivot,
+    wallPatch,
     doorAngle: 0,
     targetAngle: 0,
     isOpen: false,

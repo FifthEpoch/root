@@ -750,6 +750,34 @@ export class MonitorInteraction {
     );
   }
 
+  _computeProtectedRect3D(group) {
+    this._box.setFromObject(group);
+    const expand = 0.2;
+    this._box.expandByScalar(expand);
+
+    const corners = [];
+    const min = this._box.min, max = this._box.max;
+    for (let ix = 0; ix <= 1; ix++)
+      for (let iy = 0; iy <= 1; iy++)
+        for (let iz = 0; iz <= 1; iz++)
+          corners.push(new THREE.Vector3(
+            ix ? max.x : min.x, iy ? max.y : min.y, iz ? max.z : min.z));
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const c of corners) {
+      c.project(this.camera);
+      minX = Math.min(minX, (c.x + 1) * 0.5);
+      minY = Math.min(minY, (c.y + 1) * 0.5);
+      maxX = Math.max(maxX, (c.x + 1) * 0.5);
+      maxY = Math.max(maxY, (c.y + 1) * 0.5);
+    }
+    const pad = 0.02;
+    return new THREE.Vector4(
+      Math.max(0, minX - pad), Math.max(0, minY - pad),
+      Math.min(1, maxX + pad), Math.min(1, maxY + pad)
+    );
+  }
+
   _updateFlicker(dt, isHovering, darkMode) {
     if (isHovering) {
       this._hoverTime = Math.min(this._hoverTime + dt, 1.5);
@@ -793,8 +821,9 @@ export class MonitorInteraction {
     }
     this._wasHovering = isHovering;
 
-    // Distortion effect (only during hover, not zoom-in)
-    const targetIntensity = isHovering ? 1.0 : 0.0;
+    // Distortion effect (hover or external hover, not zoom-in)
+    const anyHover = isHovering || externalHover;
+    const targetIntensity = anyHover ? 1.0 : 0.0;
     this._distortionIntensity += (targetIntensity - this._distortionIntensity) * Math.min(dt * 6.0, 1.0);
     this._distortionPass.uniforms.intensity.value = this._distortionIntensity;
     this._distortionPass.uniforms.time.value = elapsed || 0;
@@ -802,6 +831,8 @@ export class MonitorInteraction {
 
     if (isHovering) {
       this._distortionPass.uniforms.protectedRect.value = this._computeProtectedRect(this.hoveredScreen);
+    } else if (externalHover) {
+      this._distortionPass.uniforms.protectedRect.value = this._computeProtectedRect3D(this.externalHoverGroup);
     } else {
       this._distortionPass.uniforms.protectedRect.value.set(-2, -2, -1, -1);
     }
@@ -816,7 +847,7 @@ export class MonitorInteraction {
       }
     }
 
-    // Hover spotlight — active during hover and zoom-in (targeting active screen)
+    // Hover spotlight — active during hover, zoom-in, or external hover
     if ((isHovering && this.hoveredScreen) || (inView && this.selectedScreen)) {
       const targetScreen = this.hoveredScreen || this.selectedScreen;
       const screenPos = new THREE.Vector3();
@@ -828,13 +859,22 @@ export class MonitorInteraction {
       const targetI = isHovering ? 4.0 : 2.5;
       this._hoverSpot.intensity += (targetI - this._hoverSpot.intensity) * Math.min(dt * 5.0, 1.0);
       this._hoverSpot.visible = true;
+    } else if (externalHover && this.externalHoverGroup) {
+      const gPos = new THREE.Vector3();
+      this.externalHoverGroup.getWorldPosition(gPos);
+      gPos.y += 0.8;
+      this._hoverSpot.position.set(gPos.x, gPos.y + 2.0, gPos.z + 1.5);
+      this._hoverSpot.target.position.copy(gPos);
+      this._hoverSpot.target.updateMatrixWorld();
+      this._hoverSpot.intensity += (4.0 - this._hoverSpot.intensity) * Math.min(dt * 5.0, 1.0);
+      this._hoverSpot.visible = true;
     } else {
       this._hoverSpot.intensity *= Math.max(0, 1.0 - dt * 6.0);
       if (this._hoverSpot.intensity < 0.05) this._hoverSpot.visible = false;
     }
 
-    // Particles (only during hover, not zoom-in)
-    this._updateParticles(dt, isHovering);
+    // Particles (hover or external hover, not zoom-in)
+    this._updateParticles(dt, anyHover);
 
     // Color stripping — keep active during zoom-in for contrast
     this._updateColorStrip(dt, effectsActive);
