@@ -46,7 +46,7 @@ export async function buildClassroom(scene) {
 
   const projector = buildProjector(scene);
 
-  const { leds, rackPosition, rackHitbox, rackGlow } = buildServerRack(scene);
+  const { leds, rackPosition, rackHitbox, rackGlow, rackTextRows } = buildServerRack(scene);
 
   return {
     screenMeshes,
@@ -54,6 +54,7 @@ export async function buildClassroom(scene) {
     rackPosition,
     rackHitbox,
     rackGlow,
+    rackTextRows,
     projectorScreenMesh: projector.screenMesh,
     projectorScreenPos: projector.screenPos,
     roomWidth: ROOM_WIDTH,

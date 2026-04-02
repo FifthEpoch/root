@@ -133,9 +133,12 @@ export class ScreenController {
 
     let alpha = 1.0;
     if (hasHover && !isHovered) {
-      alpha = 0.15 + 0.1 * Math.sin(elapsed * 2.0 + phase);
+      alpha = 0.12 + 0.08 * Math.sin(elapsed * 2.0 + phase);
     } else if (!isHovered) {
-      alpha = 0.6 + 0.4 * Math.sin(elapsed * 2.0 + phase);
+      // Subtle CRT flicker: mostly steady with tiny random dips
+      const flicker = 0.97 + 0.03 * Math.sin(elapsed * 60 + phase * 7);
+      const drift = 0.95 + 0.05 * Math.sin(elapsed * 0.8 + phase);
+      alpha = flicker * drift;
     }
 
     ctx.save();

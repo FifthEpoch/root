@@ -9,8 +9,10 @@ media/vid/4A3AC581-3F7D-4026-AC08-6B834E735C6F.mov
 projects/island-air-vol-v/images/
 projects/island-air-vol-iv/images/
 projects/the-space-that-remains/images/
-projects/keyword-censorship/images/
-projects/taz/images/
+projects/keyword-censorship/images/*
+!projects/keyword-censorship/images/00.png
+projects/taz/images/*
+!projects/taz/images/30.jpg
 projects/taz/pdf/
 projects/writings/images/
 projects/past-sculptures/

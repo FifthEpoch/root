@@ -120,7 +120,7 @@ export const projects = [
     title: 'Evading Online Keyword Censorship',
     subtitle:
       'Sensitive information, such as banned books and protest organization communications, require secure channels to evade private or state surveillance. This project aims to provide public access to a secure steganographic system for additional privacy in communications and underground publishing.',
-    screenImage: 'https://pub-c13cdb673b934fa282c9bb3c6f22046e.r2.dev/projects/pixel-ninja/images/00.png',
+    screenImage: 'projects/keyword-censorship/images/00.png',
     screenOverlay: true,
     screenTitle: 'Pixel Ninja',
     screenSubtitle: 'Steganographic tool for evading keyword censorship via hidden text in images.',
@@ -184,7 +184,7 @@ export const projects = [
     title: 'Temporary Autonomous Zone Traditional Chinese Translation',
     subtitle:
       '5,000 copies of the translated text were made available for free in Hong Kong in 2020 with the help of 40+ volunteers.',
-    screenImage: 'https://pub-c13cdb673b934fa282c9bb3c6f22046e.r2.dev/projects/taz/images/30.jpg',
+    screenImage: 'projects/taz/images/30.jpg',
     screenOverlay: true,
     screenTitle: 'TAZ EN-ZH Translation',
     screenSubtitle: '5,000 free copies distributed in Hong Kong with 40+ volunteers.',
