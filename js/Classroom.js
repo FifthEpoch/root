@@ -841,8 +841,10 @@ function buildSkeletonChair(scene, gltf) {
 
   scene.add(group);
 
-  // Invisible hitbox for raycasting
-  const hitGeo = new THREE.BoxGeometry(0.9, 1.4, 0.7);
+  // Invisible hitbox for raycasting — larger on mobile for easier targeting
+  const isMobile = 'ontouchstart' in window || matchMedia('(pointer: coarse)').matches;
+  const hitScale = isMobile ? 2.0 : 1.0;
+  const hitGeo = new THREE.BoxGeometry(0.9 * hitScale, 1.4 * hitScale, 0.7 * hitScale);
   const hitMat = new THREE.MeshBasicMaterial({ visible: false });
   const hitbox = new THREE.Mesh(hitGeo, hitMat);
   hitbox.position.set(hw - 1.2, 0.7, hd - 1.0);

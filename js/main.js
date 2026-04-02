@@ -171,7 +171,7 @@ async function init() {
 
   // Fall phases: 'falling' → 'whiteout' → 'dropin'
   const FALL_DUR = 3.5;
-  const WHITEOUT_RAMP = 0.4;
+  const WHITEOUT_RAMP = 2.0;
   const WHITEOUT_HOLD = 0.8;
   const DROPIN_DUR = 0.6;
   let doorFallPhase = 'falling';
@@ -357,7 +357,7 @@ async function init() {
   // Skeleton chair interaction
   const skelRaycaster = new THREE.Raycaster();
   let skelHovered = false;
-  const SKEL_HOVER_RANGE = 4.5;
+  const SKEL_HOVER_RANGE = isMobile ? 6.0 : 4.5;
   const SKEL_PROJECT_ID = 6;
   const accordionAudio = new Audio('media/aud/accordion-high-pitch.mp3');
   accordionAudio.loop = true;
@@ -713,21 +713,11 @@ async function init() {
 
   function startLab() {
     audioManager.start();
-    // Pre-warm projector video and accordion audio for mobile (muted = silent)
+    // Projector and accordion are played on-demand (hover/proximity).
+    // AudioContext unlock in AudioManager handles iOS audio restrictions.
     projectorVideo.muted = true;
-    projectorVideo.play().then(() => {
-      projectorVideo.pause();
-      projectorVideo.currentTime = 0;
-      projectorVideo.muted = true;
-    }).catch(() => {});
-    accordionAudio.muted = true;
+    projectorVideo.volume = 0;
     accordionAudio.volume = 0;
-    accordionAudio.play().then(() => {
-      accordionAudio.pause();
-      accordionAudio.currentTime = 0;
-      accordionAudio.muted = false;
-      accordionAudio.volume = 0;
-    }).catch(() => { accordionAudio.muted = false; });
     labUI.classList.add('visible');
     if (isMobile && mobileReticle) {
       mobileReticle.classList.remove('hidden');

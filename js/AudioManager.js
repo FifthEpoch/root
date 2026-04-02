@@ -43,32 +43,40 @@ export class AudioManager {
     });
   }
 
+  /**
+   * Called from a user-gesture context (button click).
+   * Uses AudioContext to unlock iOS audio, then starts ambience only.
+   * Other sounds play on-demand in update().
+   */
   start() {
     if (this._started) return;
     this._started = true;
 
-    const all = [this._ambience, this._serverNoise, this._footsteps, this._distortion];
-
-    // Pre-warm all audio elements (muted, zero volume) then immediately pause.
-    const warmups = all.map((el) => {
-      el.muted = true;
-      el.volume = 0;
-      return el.play().then(() => {
-        el.pause();
-        el.currentTime = 0;
-        el.muted = false;
-        el.volume = 0;
-      }).catch(() => { el.muted = false; });
-    });
-
-    Promise.all(warmups).then(() => {
+    // Unlock Web Audio on iOS — a resumed AudioContext allows
+    // subsequent HTMLAudioElement.play() calls without gestures.
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (AudioCtx) {
+      const ctx = new AudioCtx();
+      // Connect each element through the context to fully unlock them
+      [this._ambience, this._serverNoise, this._footsteps, this._distortion].forEach((el) => {
+        try { ctx.createMediaElementSource(el); } catch (_) {}
+      });
+      ctx.resume().then(() => {
+        this._ready = true;
+        if (!this._muted) {
+          this._ambience.volume = 0;
+          this._ambience.play().catch(() => {});
+        }
+      }).catch(() => {
+        this._ready = true;
+      });
+    } else {
       this._ready = true;
-      // Start ambience immediately after warm-up
       if (!this._muted) {
         this._ambience.volume = 0;
         this._ambience.play().catch(() => {});
       }
-    });
+    }
   }
 
   toggleMute() {
@@ -100,7 +108,7 @@ export class AudioManager {
     if (!this._started || !this._ready || this._muted) return;
 
     // ── 1. Ambience: always playing, smooth fade-in ──
-    if (this._ambience.paused) {
+    if (this._ambience.paused && !document.hidden) {
       this._ambience.volume = 0;
       this._ambience.play().catch(() => {});
     }
