@@ -226,12 +226,13 @@ async function init() {
       if (rackHovered) {
         const pulse = 0.7 + 0.3 * Math.sin(elapsed * 8.0 + led.phase);
         led.mesh.material.color.setRGB(pulse, pulse, pulse);
-        led.mesh.material.emissive = led.mesh.material.color;
-        led.mesh.material.emissiveIntensity = 2.0;
+        led.mesh.material.emissive.setRGB(pulse, pulse, pulse);
+        led.mesh.material.emissiveIntensity = 1.0;
       } else {
         const blink = Math.sin(elapsed * led.speed + led.phase);
-        const on = blink > 0.2 || (Math.random() < 0.02);
+        const on = blink > 0.2;
         led.mesh.material.color.setHex(on ? led.baseColor : 0x111111);
+        led.mesh.material.emissive.setHex(0x000000);
         led.mesh.material.emissiveIntensity = 0;
       }
     }
@@ -285,8 +286,8 @@ async function init() {
       rackHovered = false;
     }
 
-    const rackGlowTarget = rackHovered ? 5.0 : 0;
-    rackGlow.intensity += (rackGlowTarget - rackGlow.intensity) * Math.min(dt * 6.0, 1.0);
+    const rackGlowTarget = rackHovered ? 2.0 : 0;
+    rackGlow.intensity += (rackGlowTarget - rackGlow.intensity) * Math.min(dt * 4.0, 1.0);
 
     canvas.style.cursor = rackHovered ? 'pointer' : '';
 

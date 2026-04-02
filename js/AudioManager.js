@@ -27,30 +27,47 @@ export class AudioManager {
     this._footstepVol = 0.25;
     this._distortionVol = 0.3;
 
-    this._wasWalking = false;
-    this._wasHovering = false;
     this._footPlaying = false;
     this._distPlaying = false;
+    this._serverPlaying = false;
   }
 
   start() {
     if (this._started) return;
     this._started = true;
     this._ambience.play().catch(() => {});
-    this._serverNoise.play().catch(() => {});
+    // Pre-warm all audio elements so .play() works later without gesture
+    this._serverNoise.play().then(() => {
+      this._serverNoise.pause();
+      this._serverNoise.currentTime = 0;
+    }).catch(() => {});
+    this._footsteps.play().then(() => {
+      this._footsteps.pause();
+      this._footsteps.currentTime = 0;
+    }).catch(() => {});
+    this._distortion.play().then(() => {
+      this._distortion.pause();
+      this._distortion.currentTime = 0;
+    }).catch(() => {});
   }
 
   toggleMute() {
     this._muted = !this._muted;
     if (this._muted) {
+      this._ambience.pause();
+      this._serverNoise.pause();
+      this._footsteps.pause();
+      this._distortion.pause();
       this._ambience.volume = 0;
       this._serverNoise.volume = 0;
       this._footsteps.volume = 0;
       this._distortion.volume = 0;
-      this._footsteps.pause();
-      this._distortion.pause();
       this._footPlaying = false;
       this._distPlaying = false;
+      this._serverPlaying = false;
+    } else if (this._started) {
+      this._ambience.volume = this._targetAmbienceVol;
+      this._ambience.play().catch(() => {});
     }
     return this._muted;
   }
@@ -64,17 +81,30 @@ export class AudioManager {
 
     const camPos = this._camera.position;
 
-    const ambienceTarget = this._targetAmbienceVol;
-    this._ambience.volume = this._lerp(this._ambience.volume, ambienceTarget, dt * 2.0);
+    // Ambience: always on, fade in
+    const ambTarget = this._targetAmbienceVol;
+    this._ambience.volume = this._lerp(this._ambience.volume, ambTarget, dt * 2.0);
 
+    // Server noise: proximity-based, only play when close enough
     const dx = camPos.x - this._rackPos.x;
     const dz = camPos.z - this._rackPos.z;
     const dist = Math.sqrt(dx * dx + dz * dz);
     const proximity = Math.max(0, 1.0 - dist / this._serverProximityRange);
     const serverTarget = proximity * proximity * this._maxServerVol;
-    this._serverNoise.volume = this._lerp(this._serverNoise.volume, serverTarget, dt * 3.0);
 
-    // Footsteps: only play while walking, pause when stopped
+    if (serverTarget > 0.01 && !this._serverPlaying) {
+      this._serverNoise.play().catch(() => {});
+      this._serverPlaying = true;
+    } else if (serverTarget < 0.005 && this._serverPlaying) {
+      this._serverNoise.pause();
+      this._serverNoise.volume = 0;
+      this._serverPlaying = false;
+    }
+    if (this._serverPlaying) {
+      this._serverNoise.volume = this._lerp(this._serverNoise.volume, serverTarget, dt * 3.0);
+    }
+
+    // Footsteps: play while walking, pause when stopped
     if (isWalking && !this._footPlaying) {
       this._footsteps.currentTime = 0;
       this._footsteps.volume = this._footstepVol;
@@ -86,7 +116,7 @@ export class AudioManager {
       this._footPlaying = false;
     }
 
-    // Distortion: only play while hovering, pause when not
+    // Distortion: play while hovering, pause when not
     if (isHovering && !this._distPlaying) {
       this._distortion.currentTime = 0;
       this._distortion.volume = this._distortionVol;
@@ -97,9 +127,6 @@ export class AudioManager {
       this._distortion.volume = 0;
       this._distPlaying = false;
     }
-
-    this._wasWalking = isWalking;
-    this._wasHovering = isHovering;
   }
 
   _lerp(current, target, speed) {
