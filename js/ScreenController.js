@@ -216,7 +216,8 @@ export class ScreenController {
       }
       if (currentLine) lines.push(currentLine);
 
-      const itemH = lines.length * lineHeight;
+      const wrapLineH = fontSize + 3;
+      const itemH = lines.length * wrapLineH;
       screen.listItemRects.push({
         x: pad,
         y: y - fontSize,
@@ -225,11 +226,11 @@ export class ScreenController {
         childIndex: i,
       });
 
-      for (const line of lines) {
-        ctx.fillText(line, pad, y);
-        const lineW = ctx.measureText(line).width;
+      for (let li = 0; li < lines.length; li++) {
+        ctx.fillText(lines[li], pad, y);
+        const lineW = ctx.measureText(lines[li]).width;
         ctx.fillRect(pad, y + 2, lineW, 1);
-        y += lineHeight;
+        y += li < lines.length - 1 ? wrapLineH : lineHeight;
       }
     }
 

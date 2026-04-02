@@ -39,15 +39,16 @@ export class AudioManager {
     this._started = true;
     this._startTime = performance.now();
 
-    // Pre-warm all audio elements so mobile browsers unlock them.
-    // Keep volume at 0 during warm-up so nothing is audible.
+    // Pre-warm: mute at browser level (guaranteed silent), briefly play, then pause.
     const warm = (el) => {
+      el.muted = true;
       el.volume = 0;
       return el.play().then(() => {
         el.pause();
         el.currentTime = 0;
+        el.muted = false;
         el.volume = 0;
-      }).catch(() => {});
+      }).catch(() => { el.muted = false; });
     };
 
     Promise.all([
@@ -57,7 +58,6 @@ export class AudioManager {
       warm(this._distortion),
     ]).then(() => {
       this._ready = true;
-      // Start ambience only after all pre-warm is done
       if (!this._muted) {
         this._ambience.volume = 0;
         this._ambience.play().catch(() => {});

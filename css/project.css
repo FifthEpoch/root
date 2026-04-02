@@ -108,57 +108,54 @@ body.carousel-expanded #media-close {
   .page-shell { padding: 0 2.5rem; }
 }
 
-/* ── Sticky header: solid white, extends full viewport width ── */
+/* ── Sticky back-nav: full viewport width ── */
 
-.page-header {
+.back-nav-sticky {
   position: sticky;
   top: 0;
   z-index: 5;
-  padding: 1.6rem 0 1.4rem;
+  padding: 0.8rem 0 0.6rem;
 }
 
-.page-header::before {
+.back-nav-sticky::before {
   content: '';
   position: absolute;
-  inset: 0;
-  left: -1.5rem;
-  right: -1.5rem;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100vw;
   background: #fff;
   z-index: -1;
 }
 
-@media (min-width: 600px) {
-  .page-header::before { left: -2.5rem; right: -2.5rem; }
-}
-
-.page-header::after {
+.back-nav-sticky::after {
   content: '';
   position: absolute;
-  left: -1.5rem;
-  right: -1.5rem;
-  bottom: -0.6rem;
-  height: 0.6rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100vw;
+  bottom: -0.5rem;
+  height: 0.5rem;
   background: linear-gradient(to bottom, #fff 0%, rgba(255, 255, 255, 0) 100%);
   pointer-events: none;
   z-index: -1;
 }
 
-@media (min-width: 600px) {
-  .page-header::after { left: -2.5rem; right: -2.5rem; }
-}
-
-.back-nav {
-  margin-bottom: 0.6rem;
-}
-
-.back-nav a {
+.back-nav-sticky a {
   color: #0000EE;
   text-decoration: underline;
   font-size: 13px;
 }
 
-.back-nav a:visited {
+.back-nav-sticky a:visited {
   color: #551A8B;
+}
+
+/* ── Page header (scrollable) ── */
+
+.page-header {
+  padding: 0.8rem 0 1.4rem;
 }
 
 .page-header h1 {

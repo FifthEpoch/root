@@ -570,16 +570,21 @@ async function init() {
 
   function startLab() {
     audioManager.start();
-    // Pre-warm projector video and accordion audio for mobile
+    // Pre-warm projector video and accordion audio for mobile (muted = silent)
+    projectorVideo.muted = true;
     projectorVideo.play().then(() => {
       projectorVideo.pause();
       projectorVideo.currentTime = 0;
+      projectorVideo.muted = true;
     }).catch(() => {});
+    accordionAudio.muted = true;
+    accordionAudio.volume = 0;
     accordionAudio.play().then(() => {
       accordionAudio.pause();
       accordionAudio.currentTime = 0;
+      accordionAudio.muted = false;
       accordionAudio.volume = 0;
-    }).catch(() => {});
+    }).catch(() => { accordionAudio.muted = false; });
     labUI.classList.add('visible');
     if (isMobile && mobileReticle) {
       mobileReticle.classList.remove('hidden');

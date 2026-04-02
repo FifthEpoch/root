@@ -197,20 +197,20 @@ scene.add(dirLight);
 /* ── carousel constants ── */
 
 const isMobileDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-const CENTER = new THREE.Vector3(4.0, isMobileDevice ? 0.3 : 0.0, -0.5);
-const RADIUS = isMobileDevice ? 1.6 : 2.0;
-const MAX_W = isMobileDevice ? 1.4 : 1.9;
-const MAX_H = isMobileDevice ? 1.4 : 1.9;
+const CENTER = new THREE.Vector3(4.0, isMobileDevice ? 0.6 : 0.0, -0.5);
+const RADIUS = isMobileDevice ? 1.8 : 2.0;
+const MAX_W = isMobileDevice ? 1.6 : 1.9;
+const MAX_H = isMobileDevice ? 1.6 : 1.9;
 
 /* ── enlarged gallery constants ── */
 
-const EXP_SPACING = 3.2;
+const EXP_SPACING = isMobileDevice ? 2.4 : 3.2;
 const EXP_SLANT = 0.55;
 const EXP_FADE = 0.4;
 const EXP_DEPTH_STEP = 0.25;
-const EXP_FOCUS_SCALE = 3.0;
-const EXP_OTHER_SCALE = 1.2;
-const EXP_CAM_Z = 5.8;
+const EXP_FOCUS_SCALE = isMobileDevice ? 1.8 : 3.0;
+const EXP_OTHER_SCALE = isMobileDevice ? 0.8 : 1.2;
+const EXP_CAM_Z = isMobileDevice ? 4.5 : 5.8;
 const EXP_IMG_Z = 0.0;
 
 /* ── build image planes ── */
@@ -249,13 +249,13 @@ for (let i = 0; i < media.length; i++) {
 
 if (media.length > 0) document.body.classList.add('carousel-active');
 
-/* ── offset carousel below sticky header on mobile ── */
+/* ── offset carousel below sticky back-nav on mobile ── */
 if (isMobileDevice && media.length > 0) {
-  const pageHeader = document.querySelector('.page-header');
-  if (pageHeader) {
+  const backNav = document.querySelector('.back-nav-sticky');
+  if (backNav) {
     const updateCarouselTop = () => {
-      const hh = pageHeader.getBoundingClientRect().height;
-      const padding = 16;
+      const hh = backNav.getBoundingClientRect().height;
+      const padding = 8;
       document.documentElement.style.setProperty('--carousel-top', `${hh + padding}px`);
     };
     updateCarouselTop();
