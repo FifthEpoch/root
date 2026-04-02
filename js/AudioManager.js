@@ -82,8 +82,9 @@ export class AudioManager {
   update(dt, isWalking, isHovering) {
     if (!this._started || !this._ready || this._muted) return;
 
-    // Grace period: ignore first 500ms after start to let pre-warm settle
-    if (performance.now() - this._startTime < 500) return;
+    // Grace period: ignore first 1500ms after start so pre-warm settles
+    // and initial spawn-position hover raycasts don't trigger distortion
+    if (performance.now() - this._startTime < 1500) return;
 
     const camPos = this._camera.position;
 

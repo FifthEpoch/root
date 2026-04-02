@@ -34,6 +34,7 @@ export class NavigationControls {
     this._direction = new THREE.Vector3();
 
     // Touch state (mobile)
+    this.hasInteracted = false;
     this._touchId = null;
     this._touchStartX = 0;
     this._touchStartY = 0;
@@ -119,6 +120,7 @@ export class NavigationControls {
   _onTouchStart(e) {
     e.preventDefault();
     if (this._touchId !== null || !this.enabled) return;
+    this.hasInteracted = true;
     const t = e.changedTouches[0];
     this._touchId = t.identifier;
     this._touchStartX = t.clientX;

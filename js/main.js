@@ -108,17 +108,19 @@ async function init() {
 
   // Gyroscope toggle (mobile only, auto-enable if sensor available)
   const gyroToggle = document.getElementById('gyro-toggle');
+
+  const activateGyro = async () => {
+    if (!gyroToggle) return false;
+    const ok = await controls.enableGyro();
+    if (ok) {
+      gyroToggle.classList.add('active');
+      sessionStorage.setItem('gyroEnabled', '1');
+    }
+    return ok;
+  };
+
   if (isMobile && gyroToggle) {
     gyroToggle.style.display = '';
-
-    const activateGyro = async () => {
-      const ok = await controls.enableGyro();
-      if (ok) {
-        gyroToggle.classList.add('active');
-        sessionStorage.setItem('gyroEnabled', '1');
-      }
-      return ok;
-    };
 
     gyroToggle.addEventListener('click', async () => {
       if (controls.gyroEnabled) {
@@ -129,11 +131,6 @@ async function init() {
         await activateGyro();
       }
     });
-
-    // Auto-restore gyro if user previously enabled it this session
-    if (sessionStorage.getItem('gyroEnabled') === '1') {
-      activateGyro();
-    }
   }
 
   const cvLink = document.getElementById('cv-link');
@@ -186,7 +183,7 @@ async function init() {
   const PROJ_AUDIO_FAR = 7.0;
   const PROJ_AUDIO_NEAR = 1.0;
   const PROJ_MAX_VOL = 1.0;
-  const PROJ_HOVER_RANGE = 4.0;
+  const PROJ_HOVER_RANGE = isMobile ? 6.0 : 4.0;
 
   // Projector room-dimming: collect scene lights and their base intensities
   const projLights = [];
@@ -287,7 +284,8 @@ async function init() {
     screenController.update(elapsed);
 
     const isHovering = !!monitorInteraction.hoveredScreen && !monitorInteraction.isViewing && !monitorInteraction.isTransitioning;
-    audioManager.update(dt, controls.isWalking, isHovering);
+    const hoverAudio = isHovering && (!isMobile || controls.hasInteracted);
+    audioManager.update(dt, controls.isWalking, hoverAudio);
 
     for (const led of leds) {
       if (rackHovered) {
@@ -556,6 +554,10 @@ async function init() {
   if (restoring) {
     overlay.classList.add('hidden');
     startLab();
+    // Restore gyro if previously enabled
+    if (isMobile && sessionStorage.getItem('gyroEnabled') === '1') {
+      activateGyro();
+    }
   } else {
     const enterBtn = document.getElementById('enter-btn');
     enterBtn.classList.remove('loading');
@@ -564,6 +566,12 @@ async function init() {
     await new Promise((resolve) => {
       enterBtn.addEventListener('click', resolve, { once: true });
     });
+
+    // The "Enter My Lab" tap is a user gesture — request gyroscope permission now
+    if (isMobile && gyroToggle) {
+      const ok = await activateGyro();
+      if (ok) gyroToggle.classList.add('active');
+    }
 
     overlay.classList.add('hidden');
     startLab();
