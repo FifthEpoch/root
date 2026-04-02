@@ -18,6 +18,42 @@ if (isRestore) {
   overlay.classList.add('hidden');
 }
 
+// Landing video: ping-pong playback (forward → reverse → forward …)
+const landingVideo = document.getElementById('landing-video');
+let landingReverse = false;
+let landingRAF = null;
+
+function landingTick(prevTime) {
+  landingRAF = requestAnimationFrame((now) => {
+    if (!landingVideo || landingVideo.paused) return;
+    if (landingReverse) {
+      const dt = (now - prevTime) / 1000;
+      landingVideo.currentTime = Math.max(0, landingVideo.currentTime - dt);
+      if (landingVideo.currentTime <= 0.05) {
+        landingReverse = false;
+        landingVideo.play().catch(() => {});
+      }
+      landingTick(now);
+    } else {
+      landingTick(now);
+    }
+  });
+}
+
+if (landingVideo && !isRestore) {
+  landingVideo.addEventListener('canplay', () => {
+    landingVideo.classList.add('visible');
+    landingVideo.play().catch(() => {});
+    landingTick(performance.now());
+  }, { once: true });
+  landingVideo.addEventListener('ended', () => {
+    landingReverse = true;
+    landingVideo.pause();
+    landingTick(performance.now());
+  });
+  landingVideo.load();
+}
+
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -551,7 +587,17 @@ async function init() {
     animate();
   }
 
+  function stopLandingVideo() {
+    if (landingVideo) {
+      landingVideo.pause();
+      landingVideo.removeAttribute('src');
+      landingVideo.load();
+    }
+    if (landingRAF) cancelAnimationFrame(landingRAF);
+  }
+
   if (restoring) {
+    stopLandingVideo();
     overlay.classList.add('hidden');
     startLab();
     // Restore gyro if previously enabled
@@ -573,6 +619,7 @@ async function init() {
       if (ok) gyroToggle.classList.add('active');
     }
 
+    stopLandingVideo();
     overlay.classList.add('hidden');
     startLab();
   }
