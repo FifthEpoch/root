@@ -52,30 +52,24 @@ export class AudioManager {
     if (this._started) return;
     this._started = true;
 
-    // Unlock Web Audio on iOS — a resumed AudioContext allows
-    // subsequent HTMLAudioElement.play() calls without gestures.
+    // Unlock audio on iOS by resuming an AudioContext from user gesture.
+    // Do NOT use createMediaElementSource — it reroutes output away from speakers.
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     if (AudioCtx) {
       const ctx = new AudioCtx();
-      // Connect each element through the context to fully unlock them
-      [this._ambience, this._serverNoise, this._footsteps, this._distortion].forEach((el) => {
-        try { ctx.createMediaElementSource(el); } catch (_) {}
-      });
-      ctx.resume().then(() => {
-        this._ready = true;
-        if (!this._muted) {
-          this._ambience.volume = 0;
-          this._ambience.play().catch(() => {});
-        }
-      }).catch(() => {
-        this._ready = true;
-      });
-    } else {
-      this._ready = true;
-      if (!this._muted) {
-        this._ambience.volume = 0;
-        this._ambience.play().catch(() => {});
-      }
+      // Play a tiny silent buffer to fully unlock audio output
+      const buf = ctx.createBuffer(1, 1, 22050);
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(ctx.destination);
+      src.start(0);
+      ctx.resume().catch(() => {});
+    }
+
+    this._ready = true;
+    if (!this._muted) {
+      this._ambience.volume = 0;
+      this._ambience.play().catch(() => {});
     }
   }
 
