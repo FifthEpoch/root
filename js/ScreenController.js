@@ -101,29 +101,21 @@ export class ScreenController {
     const w = canvas.width;
     const h = canvas.height;
 
+    let alpha = 1.0;
     if (hasHover && !isHovered) {
-      const dimPulse = 0.15 + 0.1 * Math.sin(elapsed * 2.0 + phase);
-      ctx.fillStyle = '#020202';
-      ctx.fillRect(0, 0, w, h);
-      ctx.globalAlpha = dimPulse;
-      ctx.fillStyle = color;
-      ctx.fillRect(0, 0, w, h);
-      ctx.globalAlpha = 1.0;
-    } else if (isHovered) {
-      ctx.fillStyle = '#050505';
-      ctx.fillRect(0, 0, w, h);
-      ctx.globalAlpha = 1.0;
-      ctx.fillStyle = color;
-      ctx.fillRect(0, 0, w, h);
-    } else {
-      const pulse = 0.6 + 0.4 * Math.sin(elapsed * 2.0 + phase);
-      ctx.fillStyle = '#050505';
-      ctx.fillRect(0, 0, w, h);
-      ctx.globalAlpha = pulse;
-      ctx.fillStyle = color;
-      ctx.fillRect(0, 0, w, h);
-      ctx.globalAlpha = 1.0;
+      alpha = 0.12 + 0.08 * Math.sin(elapsed * 2.0 + phase);
+    } else if (!isHovered) {
+      const flicker = 0.97 + 0.03 * Math.sin(elapsed * 60 + phase * 7);
+      const drift = 0.95 + 0.05 * Math.sin(elapsed * 0.8 + phase);
+      alpha = flicker * drift;
     }
+
+    ctx.fillStyle = '#050505';
+    ctx.fillRect(0, 0, w, h);
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, w, h);
+    ctx.globalAlpha = 1.0;
   }
 
   _drawBratCover(screen, elapsed, hasHover, isHovered) {
@@ -270,23 +262,20 @@ export class ScreenController {
     const w = canvas.width;
     const h = canvas.height;
 
+    let alpha = 1.0;
     if (hasHover && !isHovered) {
-      ctx.fillStyle = '#020202';
-      ctx.fillRect(0, 0, w, h);
-      const dimPulse = 0.15 + 0.1 * Math.sin(elapsed * 2.0 + phase);
-      ctx.globalAlpha = dimPulse;
-      this._drawRotatedImage(ctx, bgImage, w, h);
-      ctx.globalAlpha = 1.0;
-    } else if (isHovered) {
-      this._drawRotatedImage(ctx, bgImage, w, h);
-    } else {
-      ctx.fillStyle = '#050505';
-      ctx.fillRect(0, 0, w, h);
-      const pulse = 0.7 + 0.3 * Math.sin(elapsed * 1.5 + phase);
-      ctx.globalAlpha = pulse;
-      this._drawRotatedImage(ctx, bgImage, w, h);
-      ctx.globalAlpha = 1.0;
+      alpha = 0.12 + 0.08 * Math.sin(elapsed * 2.0 + phase);
+    } else if (!isHovered) {
+      const flicker = 0.97 + 0.03 * Math.sin(elapsed * 60 + phase * 7);
+      const drift = 0.95 + 0.05 * Math.sin(elapsed * 0.8 + phase);
+      alpha = flicker * drift;
     }
+
+    ctx.fillStyle = '#050505';
+    ctx.fillRect(0, 0, w, h);
+    ctx.globalAlpha = alpha;
+    this._drawRotatedImage(ctx, bgImage, w, h);
+    ctx.globalAlpha = 1.0;
 
     if (showOverlay) {
       ctx.save();

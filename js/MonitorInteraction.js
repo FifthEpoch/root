@@ -131,6 +131,7 @@ export class MonitorInteraction {
     this._tempVec = new THREE.Vector3();
     this._box = new THREE.Box3();
     this._hoverTime = 0;
+    this.externalHoverGroup = null;
 
     this._hoverSpot = new THREE.SpotLight(0xffffff, 0, 6, Math.PI * 0.35, 0.5, 1.0);
     this._hoverSpot.visible = false;
@@ -375,9 +376,13 @@ export class MonitorInteraction {
     const COOL_WHITE = new THREE.Color(0.92, 0.95, 1.0);
 
     let protectedGroup = null;
-    const activeScreen = this.hoveredScreen || this.selectedScreen;
-    if (activeScreen) {
-      protectedGroup = this._getTopParent(activeScreen);
+    if (this.externalHoverGroup) {
+      protectedGroup = this.externalHoverGroup;
+    } else {
+      const activeScreen = this.hoveredScreen || this.selectedScreen;
+      if (activeScreen) {
+        protectedGroup = this._getTopParent(activeScreen);
+      }
     }
 
     const entries = this._stripEntries;
@@ -775,7 +780,8 @@ export class MonitorInteraction {
     const isHovering = !!this.hoveredScreen && !this.isViewing && !this.isTransitioning;
     const inView = this.isViewing || (this.isTransitioning && this.selectedScreen);
     const activeScreen = this.hoveredScreen || this.selectedScreen;
-    const effectsActive = isHovering || inView;
+    const externalHover = !!this.externalHoverGroup;
+    const effectsActive = isHovering || inView || externalHover;
 
     // Hover hint
     if (isHovering && !this._wasHovering) {
@@ -845,7 +851,7 @@ export class MonitorInteraction {
         this._ambientLights[i].intensity = this._ambientBaseIntensities[i] * this._flickerState;
       }
     } else {
-      this._updateFlicker(dt, isHovering, false);
+      this._updateFlicker(dt, isHovering || externalHover, false);
     }
 
     if (this.isTransitioning) {

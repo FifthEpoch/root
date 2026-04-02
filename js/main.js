@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { buildClassroom, ROOM_WIDTH, ROOM_DEPTH, TABLE_HEIGHT } from './Classroom.js';
+import { buildClassroom, ROOM_WIDTH, ROOM_DEPTH, TABLE_HEIGHT, buildDoor } from './Classroom.js';
 import { ScreenController } from './ScreenController.js';
 import { NavigationControls, isMobile } from './NavigationControls.js';
 import { MonitorInteraction } from './MonitorInteraction.js';
@@ -23,6 +23,7 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.0;
+renderer.localClippingEnabled = true;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xd0c8b8);
@@ -30,7 +31,7 @@ scene.background = new THREE.Color(0xd0c8b8);
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
 
 async function init() {
-  const { screenMeshes, leds, rackPosition, rackHitbox, rackGlow, rackTextRows, projectorScreenMesh, projectorScreenPos, roomWidth, roomDepth, tableZ } = await buildClassroom(scene);
+  const { screenMeshes, leds, rackPosition, rackHitbox, rackGlow, rackTextRows, projectorScreenMesh, projectorScreenPos, skeletonGroup, skeletonHitbox, roomWidth, roomDepth, tableZ } = await buildClassroom(scene);
 
   // Check if returning from a project page with saved camera state
   const urlParams = new URLSearchParams(window.location.search);
@@ -51,6 +52,15 @@ async function init() {
   }
 
   const screenController = new ScreenController(screenMeshes);
+
+  // Easter-egg door
+  const door = buildDoor(scene);
+  const SPAWN_POS = new THREE.Vector3(7.0, TABLE_HEIGHT + 0.55, tableZ + 1.2);
+  const SPAWN_YAW = Math.PI / 2 + 0.15;
+  const SPAWN_PITCH = -0.08;
+  let doorFalling = false;
+  let doorFallTime = 0;
+  let doorFallStartY = 0;
 
   const controls = new NavigationControls(camera, canvas, {
     minZ: -roomDepth / 2,
@@ -88,7 +98,12 @@ async function init() {
     soundOnIcon.style.display = muted ? 'none' : '';
     soundOffIcon.style.display = muted ? '' : 'none';
     projectorVideo.volume = 0;
-    if (muted) projectorVideo.muted = true;
+    if (muted) {
+      projectorVideo.muted = true;
+      accordionAudio.pause();
+      accordionAudio.volume = 0;
+      accordionPlaying = false;
+    }
   });
 
   // Gyroscope toggle (mobile only, auto-enable if sensor available)
@@ -226,6 +241,15 @@ async function init() {
     });
   }
 
+  // Skeleton chair interaction
+  const skelRaycaster = new THREE.Raycaster();
+  let skelHovered = false;
+  const SKEL_HOVER_RANGE = 4.5;
+  const accordionAudio = new Audio('media/aud/accordion-high-pitch.mp3');
+  accordionAudio.loop = true;
+  accordionAudio.volume = 0;
+  let accordionPlaying = false;
+
   const clock = new THREE.Clock();
 
   function animate() {
@@ -238,7 +262,7 @@ async function init() {
     screenController.update(elapsed);
 
     const isHovering = !!monitorInteraction.hoveredScreen && !monitorInteraction.isViewing && !monitorInteraction.isTransitioning;
-    audioManager.update(dt, controls.isWalking, isHovering);
+    audioManager.update(dt, controls.isWalking, isHovering || skelHovered);
 
     for (const led of leds) {
       if (rackHovered) {
@@ -310,12 +334,13 @@ async function init() {
     const rackGlowTarget = rackHovered ? 2.0 : 0;
     rackGlow.intensity += (rackGlowTarget - rackGlow.intensity) * Math.min(dt * 4.0, 1.0);
 
-    // Orbiting text around rack
+    // Orbiting ticker-belt text around rack
     if (rackTextRows) {
       const targetOpacity = rackHovered ? 1.0 : 0.0;
       for (const row of rackTextRows.rows) {
+        const scrollD = elapsed * row[0].speed * row[0].dir * rackTextRows.perimeter * 0.10;
         for (const seg of row) {
-          const d = seg.pathOffset + elapsed * seg.speed * rackTextRows.perimeter * 0.12;
+          const d = seg.pathOffset + scrollD;
           const p = rackTextRows.posOnPath(d);
           seg.mesh.position.x = p.x;
           seg.mesh.position.z = p.z;
@@ -328,6 +353,117 @@ async function init() {
     }
 
     canvas.style.cursor = rackHovered ? 'pointer' : '';
+
+    // Skeleton chair: hover detection
+    const skelPos = skeletonHitbox.position;
+    const sdx = camera.position.x - skelPos.x;
+    const sdz = camera.position.z - skelPos.z;
+    const skelDist = Math.sqrt(sdx * sdx + sdz * sdz);
+    const prevSkelHovered = skelHovered;
+
+    if (skelDist < SKEL_HOVER_RANGE && !monitorInteraction.isViewing && !monitorInteraction.isTransitioning && !isHovering) {
+      const skelRayOrigin = isMobile ? screenCenter : rackMouse;
+      skelRaycaster.setFromCamera(skelRayOrigin, camera);
+      const skelHits = skelRaycaster.intersectObject(skeletonHitbox);
+      skelHovered = skelHits.length > 0;
+    } else {
+      skelHovered = false;
+    }
+
+    // Skeleton hover triggers color stripping via MonitorInteraction
+    monitorInteraction.externalHoverGroup = skelHovered ? skeletonGroup : null;
+
+    // Accordion audio for skeleton hover
+    if (skelHovered && !prevSkelHovered && !audioManager.muted) {
+      accordionAudio.currentTime = 0;
+      accordionAudio.volume = 0.6;
+      accordionAudio.play().catch(() => {});
+      accordionPlaying = true;
+    } else if (!skelHovered && prevSkelHovered) {
+      accordionAudio.pause();
+      accordionAudio.volume = 0;
+      accordionPlaying = false;
+    }
+    if (audioManager.muted && accordionPlaying) {
+      accordionAudio.pause();
+      accordionAudio.volume = 0;
+      accordionPlaying = false;
+    }
+
+    // Easter-egg door
+    if (doorFalling) {
+      doorFallTime += dt;
+      camera.position.y = doorFallStartY - doorFallTime * doorFallTime * 12;
+      const rollQ = new THREE.Quaternion().setFromAxisAngle(
+        new THREE.Vector3(0, 0, 1), doorFallTime * 1.5
+      );
+      const baseQ = new THREE.Quaternion().setFromEuler(
+        new THREE.Euler(controls.pitch - doorFallTime * 0.4, controls.yaw, 0, 'YXZ')
+      );
+      camera.quaternion.copy(baseQ).multiply(rollQ);
+      if (doorFallTime > 1.0) {
+        doorFalling = false;
+        scene.background = new THREE.Color(0xd0c8b8);
+        camera.position.copy(SPAWN_POS);
+        controls.yaw = SPAWN_YAW;
+        controls.pitch = SPAWN_PITCH;
+        controls._applyRotation();
+        controls.enabled = true;
+        // Restore room bounds
+        controls.minZ = -roomDepth / 2;
+        controls.maxZ = roomDepth / 2 + 1;
+        controls.minX = -roomWidth / 2 + 0.5;
+        controls.maxX = roomWidth / 2 - 0.3;
+        // Relocate door to random allowed wall position
+        const wall = door.allowedWalls[Math.floor(Math.random() * door.allowedWalls.length)];
+        const along = wall.min + Math.random() * (wall.max - wall.min);
+        if (wall.axis === 'z') {
+          door.group.position.set(along, 0, wall.coord);
+        } else {
+          door.group.position.set(wall.coord, 0, along);
+        }
+        door.group.rotation.y = wall.rotY;
+        door.doorAngle = 0;
+        door.targetAngle = 0;
+        door.panelPivot.rotation.y = 0;
+        door.isOpen = false;
+      }
+    } else {
+      const doorWorldPos = new THREE.Vector3();
+      door.group.getWorldPosition(doorWorldPos);
+      doorWorldPos.y = camera.position.y;
+      const doorDist = camera.position.distanceTo(doorWorldPos);
+
+      door.targetAngle = doorDist < door.OPEN_DIST ? -Math.PI * 0.55 : 0;
+      door.doorAngle += (door.targetAngle - door.doorAngle) * Math.min(dt * 3.0, 1.0);
+      door.panelPivot.rotation.y = door.doorAngle;
+      door.isOpen = Math.abs(door.doorAngle) > 0.3;
+
+      // Expand room bounds near open door so player can walk through
+      if (door.isOpen && doorDist < door.OPEN_DIST + 1) {
+        controls.minZ = -roomDepth / 2 - 4;
+        controls.maxZ = roomDepth / 2 + 4;
+        controls.minX = -roomWidth / 2 - 3;
+        controls.maxX = roomWidth / 2 + 3;
+      } else if (!door.isOpen) {
+        controls.minZ = -roomDepth / 2;
+        controls.maxZ = roomDepth / 2 + 1;
+        controls.minX = -roomWidth / 2 + 0.5;
+        controls.maxX = roomWidth / 2 - 0.3;
+      }
+
+      // Check if player walked through the open door past the wall
+      if (door.isOpen) {
+        const localPos = door.group.worldToLocal(camera.position.clone());
+        if (localPos.z < -0.4 && Math.abs(localPos.x) < door.DOOR_W / 2 + 0.5) {
+          doorFalling = true;
+          doorFallTime = 0;
+          doorFallStartY = camera.position.y;
+          controls.enabled = false;
+          scene.background = new THREE.Color(0x0000aa);
+        }
+      }
+    }
 
     // Dim room lights when projector is being watched
     const projDimTarget = projHovered ? 1.0 : 0.0;
@@ -362,10 +498,15 @@ async function init() {
 
   function startLab() {
     audioManager.start();
-    // Pre-warm projector video so mobile browsers allow later .play()
+    // Pre-warm projector video and accordion audio for mobile
     projectorVideo.play().then(() => {
       projectorVideo.pause();
       projectorVideo.currentTime = 0;
+    }).catch(() => {});
+    accordionAudio.play().then(() => {
+      accordionAudio.pause();
+      accordionAudio.currentTime = 0;
+      accordionAudio.volume = 0;
     }).catch(() => {});
     labUI.classList.add('visible');
     if (isMobile && mobileReticle) {

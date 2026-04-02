@@ -27,9 +27,10 @@ export async function buildClassroom(scene) {
   buildRoom(scene);
   buildLighting(scene);
 
-  const [pcGltf, chairGltf] = await Promise.all([
+  const [pcGltf, chairGltf, skelGltf] = await Promise.all([
     loadGLB('media/glb/old_pc.glb'),
     loadGLB('media/glb/classroom_chair__silla_clase.glb'),
+    loadGLB('media/glb/skeleton_chair.glb'),
   ]);
 
   // Table runs along the X axis, pushed close to back wall
@@ -48,6 +49,8 @@ export async function buildClassroom(scene) {
 
   const { leds, rackPosition, rackHitbox, rackGlow, rackTextRows } = buildServerRack(scene);
 
+  const skeleton = buildSkeletonChair(scene, skelGltf);
+
   return {
     screenMeshes,
     leds,
@@ -57,6 +60,8 @@ export async function buildClassroom(scene) {
     rackTextRows,
     projectorScreenMesh: projector.screenMesh,
     projectorScreenPos: projector.screenPos,
+    skeletonGroup: skeleton.group,
+    skeletonHitbox: skeleton.hitbox,
     roomWidth: ROOM_WIDTH,
     roomDepth: ROOM_DEPTH,
     tableZ,
@@ -681,104 +686,169 @@ function buildServerRack(scene) {
 
 function buildRackText(scene, rackX, rackZ, rackW, rackD, rackH) {
   const texts = [
-    'git git git git ',
-    'got got got got ',
-    'blood rush to my git hub hot log ',
+    'git git git git  ',
+    'got got got got  ',
+    'blood rush to my git hub hot log  ',
   ];
   const heights = [rackH * 0.82, rackH * 0.55, rackH * 0.28];
-  const padX = 0.22, padZ = 0.22;
+  const dirs = [-1, 1, -1];
+  const speeds = [0.55, 0.65, 0.50];
+
+  const padX = 0.25, padZ = 0.25;
   const halfD = rackD / 2 + padX;
   const halfW = rackW / 2 + padZ;
-  const perimeter = 2 * (halfD * 2 + halfW * 2);
+  const cornerR = 0.15;
+  const straightD = halfD * 2 - cornerR * 2;
+  const straightW = halfW * 2 - cornerR * 2;
+  const cornerArc = cornerR * Math.PI / 2;
+  const perimeter = 2 * (straightD + straightW) + 4 * cornerArc;
 
-  // Rectangular path: parameterized by distance d along the perimeter
-  // Starts at front-right corner, goes clockwise viewed from above
-  const sides = [
-    { axis: 'z', sign: 1, len: halfW * 2, fixedX: halfD, rotY: 0 },
-    { axis: 'x', sign: -1, len: halfD * 2, fixedZ: halfW, rotY: Math.PI / 2 },
-    { axis: 'z', sign: -1, len: halfW * 2, fixedX: -halfD, rotY: Math.PI },
-    { axis: 'x', sign: 1, len: halfD * 2, fixedZ: -halfW, rotY: -Math.PI / 2 },
+  // Rounded-rectangular path parameterized by arc-length d
+  // 8 segments: 4 straights + 4 corner arcs, text always faces outward
+  const PI = Math.PI;
+  const segs = [
+    { type: 'line', len: straightW, startX: halfD, startZ: -(halfW - cornerR), dx: 0, dz: 1, faceRY: PI / 2 },
+    { type: 'arc', len: cornerArc, cx: halfD - cornerR, cz: halfW - cornerR, startA: 0, sweepA: PI / 2, r: cornerR },
+    { type: 'line', len: straightD, startX: halfD - cornerR, startZ: halfW, dx: -1, dz: 0, faceRY: 0 },
+    { type: 'arc', len: cornerArc, cx: -(halfD - cornerR), cz: halfW - cornerR, startA: PI / 2, sweepA: PI / 2, r: cornerR },
+    { type: 'line', len: straightW, startX: -halfD, startZ: halfW - cornerR, dx: 0, dz: -1, faceRY: -PI / 2 },
+    { type: 'arc', len: cornerArc, cx: -(halfD - cornerR), cz: -(halfW - cornerR), startA: PI, sweepA: PI / 2, r: cornerR },
+    { type: 'line', len: straightD, startX: -(halfD - cornerR), startZ: -halfW, dx: 1, dz: 0, faceRY: PI },
+    { type: 'arc', len: cornerArc, cx: halfD - cornerR, cz: -(halfW - cornerR), startA: -PI / 2, sweepA: PI / 2, r: cornerR },
   ];
 
   function posOnPath(d) {
     let rem = ((d % perimeter) + perimeter) % perimeter;
     let cumLen = 0;
-    for (const side of sides) {
-      if (rem < cumLen + side.len) {
+    for (const s of segs) {
+      if (rem <= cumLen + s.len + 0.0001) {
         const t = rem - cumLen;
-        const frac = t / side.len - 0.5;
-        let x, z, ry;
-        if (side.axis === 'z') {
-          x = rackX + side.fixedX;
-          z = rackZ + frac * side.len * side.sign;
-          ry = side.rotY;
-        } else {
-          z = rackZ + side.fixedZ;
-          x = rackX + frac * side.len * side.sign;
-          ry = side.rotY;
+        if (s.type === 'line') {
+          return {
+            x: rackX + s.startX + s.dx * t,
+            z: rackZ + s.startZ + s.dz * t,
+            ry: s.faceRY,
+          };
         }
-        return { x, z, ry };
+        const angle = s.startA + (t / s.len) * s.sweepA;
+        return {
+          x: rackX + s.cx + s.r * Math.cos(angle),
+          z: rackZ + s.cz + s.r * Math.sin(angle),
+          ry: PI / 2 - angle,
+        };
       }
-      cumLen += side.len;
+      cumLen += s.len;
     }
-    return { x: rackX + halfD, z: rackZ, ry: 0 };
+    return posOnPath(0);
   }
 
-  function makeTextCanvas(text, fontSize) {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    ctx.font = `bold ${fontSize}px monospace`;
-    const metrics = ctx.measureText(text);
-    canvas.width = Math.ceil(metrics.width) + 8;
-    canvas.height = fontSize + 8;
+  // Render a single long repeating-text strip per row
+  const BELT_H = 0.13;
+  const SEG_COUNT = 48;
+  const fontSize = 52;
+  const segWorldW = perimeter / SEG_COUNT;
+
+  function makeBeltCanvas(text) {
+    const tmp = document.createElement('canvas');
+    const tc = tmp.getContext('2d');
+    tc.font = `bold ${fontSize}px monospace`;
+    const oneW = tc.measureText(text).width;
+    const pxPerUnit = fontSize / BELT_H;
+    const totalPx = Math.ceil(perimeter * pxPerUnit);
+    const repeats = Math.ceil(totalPx / oneW) + 2;
+    const cv = document.createElement('canvas');
+    cv.width = totalPx;
+    cv.height = fontSize + 10;
+    const ctx = cv.getContext('2d');
     ctx.font = `bold ${fontSize}px monospace`;
     ctx.fillStyle = '#44ccff';
     ctx.textBaseline = 'middle';
-    ctx.fillText(text, 4, canvas.height / 2);
-    return canvas;
+    const full = text.repeat(repeats);
+    ctx.fillText(full, 0, cv.height / 2);
+    return cv;
   }
 
   const rows = [];
-  const segCount = 14;
 
   for (let r = 0; r < texts.length; r++) {
     const row = [];
-    const fullText = texts[r];
-    const words = fullText.trim().split(' ');
     const y = heights[r];
+    const beltCanvas = makeBeltCanvas(texts[r]);
+    const beltTex = new THREE.CanvasTexture(beltCanvas);
+    beltTex.colorSpace = THREE.SRGBColorSpace;
+    beltTex.wrapS = THREE.RepeatWrapping;
 
-    for (let i = 0; i < segCount; i++) {
-      const word = words[i % words.length];
-      const canvas = makeTextCanvas(word, 48);
-      const tex = new THREE.CanvasTexture(canvas);
-      tex.colorSpace = THREE.SRGBColorSpace;
-
-      const charW = canvas.width / canvas.height;
-      const planeH = 0.12;
-      const planeW = planeH * charW;
-
+    for (let i = 0; i < SEG_COUNT; i++) {
       const mat = new THREE.MeshBasicMaterial({
-        map: tex,
+        map: beltTex.clone(),
         transparent: true,
         opacity: 0,
         side: THREE.DoubleSide,
         depthWrite: false,
       });
-      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(planeW, planeH), mat);
+      mat.map.wrapS = THREE.RepeatWrapping;
+      mat.map.repeat.set(1 / SEG_COUNT, 1);
+      mat.map.offset.set(i / SEG_COUNT, 0);
+      mat.map.needsUpdate = true;
+
+      const planeW = segWorldW * 1.03;
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(planeW, BELT_H), mat);
       mesh.position.y = y;
       mesh.renderOrder = 999;
       scene.add(mesh);
 
       row.push({
         mesh,
-        pathOffset: (i / segCount) * perimeter,
-        speed: 0.6 + r * 0.15,
+        pathOffset: (i / SEG_COUNT) * perimeter,
+        speed: speeds[r],
+        dir: dirs[r],
+        texIdx: i,
       });
     }
     rows.push(row);
   }
 
-  return { rows, posOnPath, perimeter };
+  return { rows, posOnPath, perimeter, SEG_COUNT };
+}
+
+function buildSkeletonChair(scene, gltf) {
+  const group = new THREE.Group();
+  group.userData.skeletonRoot = true;
+
+  const model = gltf.scene.clone(true);
+
+  // Model bounds: Y 0–1.8. Clip above Y=1.35 to remove the smaller mass on top.
+  const clipPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 1.35);
+  model.traverse((child) => {
+    if (child.isMesh && child.material) {
+      const mats = Array.isArray(child.material) ? child.material : [child.material];
+      for (const mat of mats) {
+        mat.clippingPlanes = [clipPlane];
+        mat.clipShadows = true;
+      }
+    }
+  });
+
+  const skelScale = 1.1;
+  model.scale.set(skelScale, skelScale, skelScale);
+  group.add(model);
+
+  // Place in the corner nearest the exhibition plate (+X, +Z corner)
+  const hw = ROOM_WIDTH / 2 + 2;
+  const hd = ROOM_DEPTH / 2 + 2;
+  group.position.set(hw - 1.2, 0, hd - 1.0);
+  group.rotation.y = -Math.PI * 0.65;
+
+  scene.add(group);
+
+  // Invisible hitbox for raycasting
+  const hitGeo = new THREE.BoxGeometry(0.9, 1.4, 0.7);
+  const hitMat = new THREE.MeshBasicMaterial({ visible: false });
+  const hitbox = new THREE.Mesh(hitGeo, hitMat);
+  hitbox.position.set(hw - 1.2, 0.7, hd - 1.0);
+  scene.add(hitbox);
+
+  return { group, hitbox };
 }
 
 function buildRoom(scene) {
@@ -904,4 +974,84 @@ function buildLighting(scene) {
   }
 }
 
-export { ROOM_WIDTH, ROOM_DEPTH, ROOM_HEIGHT, TABLE_HEIGHT };
+/* ── Easter-egg door ── */
+
+function buildDoor(scene) {
+  const DOOR_W = 0.85;
+  const DOOR_H = 2.1;
+  const FRAME_T = 0.06;
+
+  const group = new THREE.Group();
+
+  // Door frame (3 pieces: top + 2 sides)
+  const frameMat = new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 0.7, metalness: 0.1 });
+  const topGeo = new THREE.BoxGeometry(DOOR_W + FRAME_T * 2, FRAME_T, 0.1);
+  const top = new THREE.Mesh(topGeo, frameMat);
+  top.position.set(0, DOOR_H + FRAME_T / 2, 0);
+  group.add(top);
+
+  const sideGeo = new THREE.BoxGeometry(FRAME_T, DOOR_H, 0.1);
+  for (const side of [-1, 1]) {
+    const s = new THREE.Mesh(sideGeo, frameMat);
+    s.position.set(side * (DOOR_W / 2 + FRAME_T / 2), DOOR_H / 2, 0);
+    group.add(s);
+  }
+
+  // Door panel — pivot is on the left edge (hinge side)
+  const panelPivot = new THREE.Group();
+  panelPivot.position.set(-DOOR_W / 2, 0, 0);
+  group.add(panelPivot);
+
+  const panelMat = new THREE.MeshStandardMaterial({ color: 0x6b4f3a, roughness: 0.65, metalness: 0.05 });
+  const panelGeo = new THREE.BoxGeometry(DOOR_W, DOOR_H, 0.04);
+  const panel = new THREE.Mesh(panelGeo, panelMat);
+  panel.position.set(DOOR_W / 2, DOOR_H / 2, 0);
+  panelPivot.add(panel);
+
+  // Door handle
+  const handleMat = new THREE.MeshStandardMaterial({ color: 0xc0a060, roughness: 0.3, metalness: 0.8 });
+  const handleGeo = new THREE.CylinderGeometry(0.015, 0.015, 0.12, 8);
+  const handle = new THREE.Mesh(handleGeo, handleMat);
+  handle.rotation.x = Math.PI / 2;
+  handle.position.set(DOOR_W - 0.08, DOOR_H * 0.47, 0.04);
+  panelPivot.add(handle);
+
+  const knobGeo = new THREE.SphereGeometry(0.025, 10, 10);
+  const knob = new THREE.Mesh(knobGeo, handleMat);
+  knob.position.set(DOOR_W - 0.08, DOOR_H * 0.47, 0.1);
+  panelPivot.add(knob);
+
+  // Blue void behind the doorway
+  const voidMat = new THREE.MeshBasicMaterial({ color: 0x0000aa, side: THREE.DoubleSide });
+  const voidGeo = new THREE.PlaneGeometry(DOOR_W, DOOR_H);
+  const voidPlane = new THREE.Mesh(voidGeo, voidMat);
+  voidPlane.position.set(0, DOOR_H / 2, -0.15);
+  group.add(voidPlane);
+
+  scene.add(group);
+
+  // Initial placement: back wall near server corner
+  const hw = ROOM_WIDTH / 2 + 2;
+  const hd = ROOM_DEPTH / 2 + 2;
+  group.position.set(-hw + 2.5, 0, -hd);
+  group.rotation.y = 0;
+
+  return {
+    group,
+    panelPivot,
+    doorAngle: 0,
+    targetAngle: 0,
+    isOpen: false,
+    DOOR_W,
+    DOOR_H,
+    OPEN_DIST: 2.5,
+    allowedWalls: [
+      { axis: 'z', coord: -hd, rotY: 0, min: -hw + 2.0, max: hw - 3.0, wall: 'back' },
+      { axis: 'x', coord: hw, rotY: -Math.PI / 2, min: -hd + 1.0, max: hd - 1.0, wall: 'right' },
+    ],
+    hw,
+    hd,
+  };
+}
+
+export { ROOM_WIDTH, ROOM_DEPTH, ROOM_HEIGHT, TABLE_HEIGHT, buildDoor };
