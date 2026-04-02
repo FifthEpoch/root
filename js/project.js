@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { projects } from './projectData.js';
 
+const R2_BASE = 'https://pub-c13cdb673b934fa282c9bb3c6f22046e.r2.dev/';
+
 /* ── resolve project / child ── */
 
 const params = new URLSearchParams(window.location.search);
@@ -138,9 +140,9 @@ async function loadManifestMedia(manifestPath) {
     const fileName = parts[0];
     if (!fileName || fileName === 'NONE') continue;
     if (parts[1] === 'LOCAL' && parts[2]) {
-      media.push(`${baseDir}/${parts[2]}`);
+      media.push(`${R2_BASE}${baseDir}/${parts[2]}`);
     } else {
-      media.push(`${baseDir}/images/${fileName}`);
+      media.push(`${R2_BASE}${baseDir}/images/${fileName}`);
     }
   }
   return media;

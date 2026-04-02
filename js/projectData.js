@@ -1,3 +1,5 @@
+const R2 = 'https://pub-c13cdb673b934fa282c9bb3c6f22046e.r2.dev/';
+
 const link = (text, url) => ({ text, url });
 const section = (heading, text) => ({ heading, text });
 
@@ -28,8 +30,8 @@ export const projects = [
         subtitle: '',
         links: [],
         media: [
-          'projects/writings/images/03.png',
-          'projects/writings/images/04.png',
+          `${R2}projects/writings/images/03.png`,
+          `${R2}projects/writings/images/04.png`,
         ],
         sideBySide: true,
         sections: [],
@@ -39,7 +41,7 @@ export const projects = [
         subtitle: '',
         links: [],
         media: [
-          'projects/writings/images/00.png',
+          `${R2}projects/writings/images/00.png`,
         ],
         sections: [],
       },
@@ -51,9 +53,9 @@ export const projects = [
       'A small index of group exhibitions and show documentation. Select a show title to enter its individual project page.',
     links: [],
     media: [
-      'projects/island-air-vol-v/images/00.jpg',
-      'projects/island-air-vol-iv/images/00.jpg',
-      'projects/the-space-that-remains/images/00.jpg',
+      `${R2}projects/island-air-vol-v/images/00.jpg`,
+      `${R2}projects/island-air-vol-iv/images/00.jpg`,
+      `${R2}projects/the-space-that-remains/images/00.jpg`,
     ],
     children: [
       {
@@ -173,7 +175,7 @@ export const projects = [
     subtitle:
       '5,000 copies of the translated text were made available for free in Hong Kong in 2020 with the help of 40+ volunteers.',
     links: [
-      link('Read TAZ in zh', 'projects/taz/pdf/TAZ_zh.pdf'),
+      link('Read TAZ in zh', `${R2}projects/taz/pdf/TAZ_zh.pdf`),
       link('Translation Process', 'https://docs.google.com/document/d/1F7h-lngSmDhhjcMpVPkd9AAi8zhH9ubmwZjliRNsQNU/edit?usp=sharing'),
     ],
     manifestPath: 'projects/taz/manifest.txt',

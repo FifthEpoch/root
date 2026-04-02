@@ -116,7 +116,8 @@ async function init() {
       pitch: controls.pitch,
     }));
     const backUrl = encodeURIComponent('index.html?restore=1');
-    window.location.href = `pdf-viewer.html?url=projects%2FCV%2Fting-CV-all.pdf&title=CV&back=${backUrl}`;
+    const cvUrl = encodeURIComponent('https://pub-c13cdb673b934fa282c9bb3c6f22046e.r2.dev/projects/CV/ting-CV-all.pdf');
+    window.location.href = `pdf-viewer.html?url=${cvUrl}&title=CV&back=${backUrl}`;
   });
 
   // Projector video texture
