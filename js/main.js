@@ -415,6 +415,9 @@ async function init() {
       accordionPlaying = false;
     }
 
+    // Animate door void static
+    door.voidMat.uniforms.uTime.value = elapsed;
+
     // Easter-egg door
     if (doorFalling) {
       doorFallTime += dt;
@@ -427,12 +430,10 @@ async function init() {
       );
       camera.quaternion.copy(baseQ).multiply(rollQ);
 
-      // Shift background color gradually darker during fall for depth cue
+      // Shift background gradually to pure black during fall
       const t = Math.min(doorFallTime / 2.0, 1.0);
-      const r = 0.0;
-      const g = 0.0 + 0.02 * (1.0 - t);
-      const b = 0.667 - 0.35 * t;
-      scene.background.setRGB(r, g, b);
+      const v = 0.03 * (1.0 - t);
+      scene.background.setRGB(v, v, v * 1.3);
 
       if (doorFallTime > 2.0) {
         doorFalling = false;
@@ -497,7 +498,7 @@ async function init() {
           doorFallTime = 0;
           doorFallStartY = camera.position.y;
           controls.enabled = false;
-          scene.background = new THREE.Color(0x0000aa);
+          scene.background = new THREE.Color(0x080810);
         }
       }
     }

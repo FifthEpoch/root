@@ -787,8 +787,8 @@ function buildRackText(scene, rackX, rackZ, rackW, rackD, rackH) {
         depthWrite: false,
       });
       mat.map.wrapS = THREE.RepeatWrapping;
-      mat.map.repeat.set(1 / SEG_COUNT, 1);
-      mat.map.offset.set(i / SEG_COUNT, 0);
+      mat.map.repeat.set(-1 / SEG_COUNT, 1);
+      mat.map.offset.set((i + 1) / SEG_COUNT, 0);
       mat.map.needsUpdate = true;
 
       const planeW = segWorldW * 1.03;
@@ -837,7 +837,7 @@ function buildSkeletonChair(scene, gltf) {
   const hw = ROOM_WIDTH / 2 + 2;
   const hd = ROOM_DEPTH / 2 + 2;
   group.position.set(hw - 1.2, 0, hd - 1.0);
-  group.rotation.y = -Math.PI * 0.65 - (20 * Math.PI / 180);
+  group.rotation.y = -Math.PI * 0.65 - (30 * Math.PI / 180);
 
   scene.add(group);
 
@@ -1021,22 +1021,87 @@ function buildDoor(scene) {
   knob.position.set(DOOR_W - 0.08, DOOR_H * 0.47, 0.1);
   panelPivot.add(knob);
 
-  // Blue void behind the doorway — sits behind the wall to show through
-  const voidMat = new THREE.MeshBasicMaterial({ color: 0x0000aa, side: THREE.DoubleSide });
+  // Animated TV-static void behind the doorway.
+  // Positioned in front of the room wall so it occludes the wall via depth testing.
+  const voidMat = new THREE.ShaderMaterial({
+    uniforms: { uTime: { value: 0 } },
+    vertexShader: `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform float uTime;
+      varying vec2 vUv;
+
+      // Hash-based pseudo-random
+      float hash(vec2 p) {
+        return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+      }
+
+      // Value noise with smooth interpolation
+      float noise(vec2 p) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        f = f * f * (3.0 - 2.0 * f);
+        float a = hash(i);
+        float b = hash(i + vec2(1.0, 0.0));
+        float c = hash(i + vec2(0.0, 1.0));
+        float d = hash(i + vec2(1.0, 1.0));
+        return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+      }
+
+      // Layered fractal noise for fluid feel
+      float fbm(vec2 p) {
+        float v = 0.0;
+        float a = 0.5;
+        vec2 shift = vec2(100.0);
+        for (int i = 0; i < 5; i++) {
+          v += a * noise(p);
+          p = p * 2.0 + shift;
+          a *= 0.5;
+        }
+        return v;
+      }
+
+      void main() {
+        vec2 uv = vUv;
+
+        // Slow fluid warp
+        float t = uTime * 0.3;
+        vec2 q = vec2(fbm(uv * 3.0 + t * 0.4), fbm(uv * 3.0 + vec2(5.2, 1.3) + t * 0.3));
+        vec2 r = vec2(fbm(uv * 3.0 + 4.0 * q + vec2(1.7, 9.2) + t * 0.15),
+                      fbm(uv * 3.0 + 4.0 * q + vec2(8.3, 2.8) + t * 0.2));
+
+        float fluid = fbm(uv * 3.0 + 4.0 * r);
+
+        // High-frequency TV grain
+        float grain = hash(uv * 800.0 + fract(uTime * 60.0) * 100.0);
+
+        // Blend: mostly fluid with static grain overlay
+        float v = mix(fluid, grain, 0.35);
+
+        // Tinted grey-blue palette
+        vec3 col = mix(vec3(0.04, 0.04, 0.08), vec3(0.7, 0.72, 0.78), v);
+        gl_FragColor = vec4(col, 1.0);
+      }
+    `,
+    side: THREE.DoubleSide,
+  });
   const voidGeo = new THREE.PlaneGeometry(DOOR_W + 0.02, DOOR_H + 0.02);
   const voidPlane = new THREE.Mesh(voidGeo, voidMat);
-  voidPlane.position.set(0, DOOR_H / 2, -0.25);
+  voidPlane.position.set(0, DOOR_H / 2, 0.015);
   group.add(voidPlane);
 
-  // Wall patch that covers the real wall behind the doorway. Renders on top
-  // of the room wall so the void is hidden when the door is closed. The patch
-  // is removed from the group during the open animation so the void shows.
+  // Wall patch sits in front of the void to hide it when the door is closed.
   const wallPatchMat = new THREE.MeshStandardMaterial({
     color: 0xd2c9b8, roughness: 0.85, metalness: 0.0,
   });
   const wallPatchGeo = new THREE.PlaneGeometry(DOOR_W + FRAME_T * 2 + 0.04, DOOR_H + FRAME_T + 0.04);
   const wallPatch = new THREE.Mesh(wallPatchGeo, wallPatchMat);
-  wallPatch.position.set(0, DOOR_H / 2, 0.01);
+  wallPatch.position.set(0, DOOR_H / 2, 0.025);
   wallPatch.renderOrder = 1;
   group.add(wallPatch);
 
@@ -1052,6 +1117,7 @@ function buildDoor(scene) {
     group,
     panelPivot,
     wallPatch,
+    voidMat,
     doorAngle: 0,
     targetAngle: 0,
     isOpen: false,
