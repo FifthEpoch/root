@@ -495,17 +495,35 @@ export class MonitorInteraction {
     }
   }
 
+  setScreenController(sc) {
+    this._screenController = sc;
+  }
+
   _handleClick() {
     if (this.isTransitioning) return;
 
     if (this.isViewing) {
-      // On mobile, use actual tap position so user can tap outside the screen to exit
       const clickOrigin = isMobile
         ? (this._tapPoint || this._reticleCenter)
         : this.mouse;
       this.raycaster.setFromCamera(clickOrigin, this.camera);
       const hits = this.raycaster.intersectObjects([this.selectedScreen]);
       if (hits.length > 0) {
+        const idx = this.screenMeshes.indexOf(this.selectedScreen);
+        const project = this._projects[idx];
+
+        if (project && project.listScreen && this._screenController) {
+          const uv = hits[0].uv;
+          if (uv) {
+            const screenEntry = this._screenController.screens[idx];
+            const childIdx = this._screenController.getListItemAtUV(screenEntry, uv.x, uv.y);
+            if (childIdx >= 0) {
+              this._navigateToChild(idx, childIdx);
+            }
+          }
+          return;
+        }
+
         this._navigateToProject();
       } else {
         this._exitView();
@@ -515,6 +533,31 @@ export class MonitorInteraction {
 
     if (this.hoveredScreen) {
       this._enterView(this.hoveredScreen);
+    }
+  }
+
+  _navigateToChild(projectIdx, childIdx) {
+    const project = this._projects[projectIdx];
+    const child = project.children && project.children[childIdx];
+    if (!child) return;
+
+    sessionStorage.setItem('labCamera', JSON.stringify({
+      x: this.savedPosition.x,
+      y: this.savedPosition.y,
+      z: this.savedPosition.z,
+      yaw: this.savedYaw,
+      pitch: this.savedPitch,
+    }));
+
+    if (child.href && child.href.toLowerCase().endsWith('.pdf')) {
+      const backUrl = encodeURIComponent(`project.html?id=${projectIdx}`);
+      const pdfUrl = encodeURIComponent(child.href);
+      const pdfTitle = encodeURIComponent(child.title);
+      window.location.href = `pdf-viewer.html?url=${pdfUrl}&title=${pdfTitle}&back=${backUrl}`;
+    } else if (child.href) {
+      window.open(child.href, '_blank', 'noopener');
+    } else {
+      window.location.href = `project.html?id=${projectIdx}&child=${childIdx}`;
     }
   }
 
@@ -585,12 +628,15 @@ export class MonitorInteraction {
     lookMatrix.lookAt(this.targetPosition, lookTarget, new THREE.Vector3(0, 1, 0));
     this.targetQuaternion.setFromRotationMatrix(lookMatrix);
 
+    if (this._screenController) this._screenController.focusedMesh = screenMesh;
+
     this._showHint('view');
     if (this._controlsHint) this._controlsHint.classList.add('fade-out');
     if (isMobile && this._mobileReticle) this._mobileReticle.classList.add('hidden');
   }
 
   _exitView() {
+    if (this._screenController) this._screenController.focusedMesh = null;
     this.selectedScreen = null;
     this.isTransitioning = true;
     this.transitionProgress = 0;
@@ -631,9 +677,18 @@ export class MonitorInteraction {
         document.body.appendChild(hint);
       }
       if (mode === 'view') {
-        hint.innerHTML = isMobile
-          ? '<p>tap screen to view project &middot; tap outside to go back</p>'
-          : '<p>click screen to view project &middot; <kbd>Esc</kbd> to go back</p>';
+        const idx = this.selectedScreen ? this.screenMeshes.indexOf(this.selectedScreen) : -1;
+        const proj = idx >= 0 ? this._projects[idx] : null;
+        const isList = proj && proj.listScreen;
+        if (isList) {
+          hint.innerHTML = isMobile
+            ? '<p>tap a title to open &middot; tap outside to go back</p>'
+            : '<p>click a title to open &middot; <kbd>Esc</kbd> to go back</p>';
+        } else {
+          hint.innerHTML = isMobile
+            ? '<p>tap screen to view project &middot; tap outside to go back</p>'
+            : '<p>click screen to view project &middot; <kbd>Esc</kbd> to go back</p>';
+        }
       } else {
         hint.innerHTML = isMobile
           ? '<p>tap to focus on screen</p>'

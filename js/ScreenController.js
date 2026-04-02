@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { projects } from './projectData.js';
+import { isMobile } from './NavigationControls.js';
 
 const SCREEN_COLORS = [
   '#00ff66',
@@ -13,6 +14,7 @@ const SCREEN_COLORS = [
 export class ScreenController {
   constructor(screenMeshes) {
     this.hoveredMesh = null;
+    this.focusedMesh = null;
 
     this.screens = screenMeshes.map((mesh, i) => {
       const canvas = document.createElement('canvas');
@@ -42,8 +44,14 @@ export class ScreenController {
         bgImage: null,
         bgLoaded: false,
         showOverlay: !!project.screenOverlay,
-        title: project.title || '',
-        subtitle: project.subtitle || '',
+        title: project.screenTitle || project.title || '',
+        subtitle: project.screenSubtitle || project.subtitle || '',
+        bratCover: !!project.bratCover,
+        bratColor: project.bratColor || '#8ACE00',
+        listScreen: !!project.listScreen,
+        children: project.children || [],
+        projectIndex: i,
+        listItemRects: [],
       };
 
       if (project.screenImage) {
@@ -58,6 +66,7 @@ export class ScreenController {
 
   update(elapsed) {
     const hasHover = !!this.hoveredMesh;
+    const focusedMesh = this.focusedMesh;
 
     for (const screen of this.screens) {
       const { mesh, ctx, canvas, texture, color, phase } = screen;
@@ -65,8 +74,13 @@ export class ScreenController {
       const h = canvas.height;
 
       const isHovered = hasHover && mesh === this.hoveredMesh;
+      const isFocused = focusedMesh && mesh === focusedMesh;
 
-      if (screen.bgLoaded) {
+      if (isFocused && screen.listScreen) {
+        this._drawListScreen(screen, elapsed);
+      } else if (screen.bratCover) {
+        this._drawBratCover(screen, elapsed, hasHover, isHovered);
+      } else if (screen.bgLoaded) {
         this._drawImageScreen(screen, elapsed, hasHover, isHovered);
       } else {
         this._drawColorScreen(screen, elapsed, hasHover, isHovered);
@@ -110,6 +124,134 @@ export class ScreenController {
       ctx.fillRect(0, 0, w, h);
       ctx.globalAlpha = 1.0;
     }
+  }
+
+  _drawBratCover(screen, elapsed, hasHover, isHovered) {
+    const { ctx, canvas, bratColor, title, phase } = screen;
+    const w = canvas.width;
+    const h = canvas.height;
+
+    let alpha = 1.0;
+    if (hasHover && !isHovered) {
+      alpha = 0.15 + 0.1 * Math.sin(elapsed * 2.0 + phase);
+    } else if (!isHovered) {
+      alpha = 0.6 + 0.4 * Math.sin(elapsed * 2.0 + phase);
+    }
+
+    ctx.save();
+    ctx.translate(w, 0);
+    ctx.rotate(Math.PI / 2);
+    const rw = h, rh = w;
+
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, rw, rh);
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = bratColor;
+    ctx.fillRect(0, 0, rw, rh);
+
+    ctx.fillStyle = '#000';
+    ctx.globalAlpha = alpha * 0.85;
+    ctx.font = 'bold 52px Arial, Helvetica, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // Slight blur effect by drawing multiple offset copies
+    const text = title.toLowerCase();
+    for (let ox = -1; ox <= 1; ox++) {
+      for (let oy = -1; oy <= 1; oy++) {
+        ctx.fillText(text, rw / 2 + ox * 1.5, rh / 2 + oy * 1.5);
+      }
+    }
+    ctx.globalAlpha = alpha;
+    ctx.fillText(text, rw / 2, rh / 2);
+    ctx.globalAlpha = 1.0;
+    ctx.textAlign = 'left';
+    ctx.restore();
+  }
+
+  _drawListScreen(screen, elapsed) {
+    const { ctx, canvas, children, projectIndex } = screen;
+    const w = canvas.width;
+    const h = canvas.height;
+
+    ctx.save();
+    ctx.translate(w, 0);
+    ctx.rotate(Math.PI / 2);
+    const rw = h, rh = w;
+
+    ctx.fillStyle = '#0a0a0a';
+    ctx.fillRect(0, 0, rw, rh);
+
+    const fontSize = isMobile ? 22 : 16;
+    const lineHeight = fontSize + (isMobile ? 14 : 10);
+    const pad = 20;
+    let y = pad + fontSize;
+
+    ctx.font = `bold ${fontSize + 2}px "Courier New", monospace`;
+    ctx.fillStyle = '#666';
+    ctx.fillText(screen.title.toLowerCase(), pad, y);
+    y += lineHeight + 4;
+
+    ctx.fillStyle = '#333';
+    ctx.fillRect(pad, y - fontSize / 2, rw - pad * 2, 1);
+    y += 8;
+
+    screen.listItemRects = [];
+
+    ctx.font = `${fontSize}px "Courier New", monospace`;
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i];
+      const title = child.title;
+
+      ctx.fillStyle = '#4488ff';
+      const metrics = ctx.measureText(title);
+      const textW = Math.min(metrics.width, rw - pad * 2);
+
+      // Store hit rect in rotated canvas coordinates
+      screen.listItemRects.push({
+        x: pad,
+        y: y - fontSize,
+        w: textW,
+        h: lineHeight,
+        childIndex: i,
+      });
+
+      // Underline
+      ctx.fillText(title, pad, y);
+      ctx.fillRect(pad, y + 2, textW, 1);
+
+      y += lineHeight;
+    }
+
+    ctx.globalAlpha = 1.0;
+    ctx.restore();
+  }
+
+  getListItemAtUV(screenEntry, u, v) {
+    if (!screenEntry.listScreen || !screenEntry.listItemRects.length) return -1;
+
+    // UV is in the canvas space (384 x 512), but the list is drawn in rotated space (512 x 384)
+    // The rotation is: translate(w, 0) then rotate(PI/2)
+    // So canvas (cx, cy) -> rotated (ry, rw - rx) where rw = canvas.width
+    // Inverse: rotated (rx, ry) -> canvas (rw - ry, rx) ... wait let me think.
+    // ctx.translate(w, 0); ctx.rotate(PI/2) means:
+    //   rotated_x = cy, rotated_y = w - cx
+    // So given UV in canvas coords: cx = u * 384, cy = v * 512
+    //   rx = cy = v * 512, ry = w - cx = 384 - u * 384
+    // But actually UV (0,0) is bottom-left in Three.js, and canvas (0,0) is top-left
+    // In canvas coords: cx = u * 384, cy = (1 - v) * 512
+    const cx = u * 384;
+    const cy = (1 - v) * 512;
+    const rx = cy;
+    const ry = 384 - cx;
+
+    for (const rect of screenEntry.listItemRects) {
+      if (rx >= rect.x && rx <= rect.x + rect.w &&
+          ry >= rect.y && ry <= rect.y + rect.h) {
+        return rect.childIndex;
+      }
+    }
+    return -1;
   }
 
   _drawRotatedImage(ctx, img, w, h) {

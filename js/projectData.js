@@ -8,6 +8,9 @@ export const projects = [
     title: 'writings',
     subtitle:
       'A list of writing projects and essays. Select a title to open the individual page.',
+    bratCover: true,
+    bratColor: '#8ACE00',
+    listScreen: true,
     links: [],
     manifestPath: 'projects/writings/manifest.txt',
     children: [
@@ -51,6 +54,9 @@ export const projects = [
     title: 'past shows',
     subtitle:
       'A small index of group exhibitions and show documentation. Select a show title to enter its individual project page.',
+    bratCover: true,
+    bratColor: '#8ACE00',
+    listScreen: true,
     links: [],
     media: [
       `${R2}projects/island-air-vol-v/images/00.jpg`,
@@ -114,6 +120,10 @@ export const projects = [
     title: 'Evading Online Keyword Censorship',
     subtitle:
       'Sensitive information, such as banned books and protest organization communications, require secure channels to evade private or state surveillance. This project aims to provide public access to a secure steganographic system for additional privacy in communications and underground publishing.',
+    screenImage: 'https://pub-c13cdb673b934fa282c9bb3c6f22046e.r2.dev/projects/pixel-ninja/images/00.png',
+    screenOverlay: true,
+    screenTitle: 'Pixel Ninja',
+    screenSubtitle: 'Steganographic tool for evading keyword censorship via hidden text in images.',
     links: [
       link('Web Tool', 'https://main.d3v90zo52exf1d.amplifyapp.com/'),
       link('Research Doc', 'https://pub-c13cdb673b934fa282c9bb3c6f22046e.r2.dev/projects/pixel-ninja/pdf/PixelStacks__High_Capacity_Image_Steganography_for_Censorship_Circumvention_of_Long_Form_Content.pdf'),
@@ -174,6 +184,10 @@ export const projects = [
     title: 'Temporary Autonomous Zone Traditional Chinese Translation',
     subtitle:
       '5,000 copies of the translated text were made available for free in Hong Kong in 2020 with the help of 40+ volunteers.',
+    screenImage: 'https://pub-c13cdb673b934fa282c9bb3c6f22046e.r2.dev/projects/taz/images/30.jpg',
+    screenOverlay: true,
+    screenTitle: 'TAZ EN-ZH Translation',
+    screenSubtitle: '5,000 free copies distributed in Hong Kong with 40+ volunteers.',
     links: [
       link('Read TAZ in zh', `${R2}projects/taz/pdf/TAZ_zh.pdf`),
       link('Translation Process', 'https://docs.google.com/document/d/1F7h-lngSmDhhjcMpVPkd9AAi8zhH9ubmwZjliRNsQNU/edit?usp=sharing'),

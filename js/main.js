@@ -75,6 +75,7 @@ async function init() {
   composer.addPass(bloomPass);
 
   const monitorInteraction = new MonitorInteraction(camera, canvas, screenMeshes, controls, { composer, scene, bloomPass });
+  monitorInteraction.setScreenController(screenController);
   const audioManager = new AudioManager(camera, rackPosition);
 
   const labUI = document.getElementById('lab-ui');
