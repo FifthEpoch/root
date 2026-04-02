@@ -298,6 +298,9 @@ export class NavigationControls {
     }
     this._gyroBaseAlpha = null;
     this._gyroBaseBeta = null;
+    // Reset pitch to level so user isn't stuck looking up/down
+    this.pitch = 0;
+    this._applyRotation();
   }
 
   get gyroEnabled() {

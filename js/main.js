@@ -112,9 +112,8 @@ async function init() {
       }
     });
 
-    // Auto-enable: restore from session or try on first load
-    const gyroSaved = sessionStorage.getItem('gyroEnabled');
-    if (gyroSaved !== '0') {
+    // Auto-restore gyro if user previously enabled it this session
+    if (sessionStorage.getItem('gyroEnabled') === '1') {
       activateGyro();
     }
   }
@@ -320,6 +319,11 @@ async function init() {
 
   function startLab() {
     audioManager.start();
+    // Pre-warm projector video so mobile browsers allow later .play()
+    projectorVideo.play().then(() => {
+      projectorVideo.pause();
+      projectorVideo.currentTime = 0;
+    }).catch(() => {});
     labUI.classList.add('visible');
     if (isMobile && mobileReticle) {
       mobileReticle.classList.remove('hidden');

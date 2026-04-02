@@ -35,20 +35,22 @@ export class AudioManager {
   start() {
     if (this._started) return;
     this._started = true;
+    this._ready = false;
     this._ambience.play().catch(() => {});
-    // Pre-warm all audio elements so .play() works later without gesture
-    this._serverNoise.play().then(() => {
-      this._serverNoise.pause();
-      this._serverNoise.currentTime = 0;
+
+    // Pre-warm: briefly play then pause to unlock audio context on mobile.
+    // Block update() until all have settled so they don't audibly bleed.
+    const warm = (el) => el.play().then(() => {
+      el.pause();
+      el.currentTime = 0;
+      el.volume = 0;
     }).catch(() => {});
-    this._footsteps.play().then(() => {
-      this._footsteps.pause();
-      this._footsteps.currentTime = 0;
-    }).catch(() => {});
-    this._distortion.play().then(() => {
-      this._distortion.pause();
-      this._distortion.currentTime = 0;
-    }).catch(() => {});
+
+    Promise.all([
+      warm(this._serverNoise),
+      warm(this._footsteps),
+      warm(this._distortion),
+    ]).then(() => { this._ready = true; });
   }
 
   toggleMute() {
@@ -77,7 +79,7 @@ export class AudioManager {
   }
 
   update(dt, isWalking, isHovering) {
-    if (!this._started || this._muted) return;
+    if (!this._started || !this._ready || this._muted) return;
 
     const camPos = this._camera.position;
 
