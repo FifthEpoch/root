@@ -4,7 +4,7 @@ import { projects } from './projectData.js';
 import { isMobile } from './NavigationControls.js';
 
 const HOVER_DISTANCE = 7.0;
-const VIEW_DISTANCE = 0.78;
+const VIEW_DISTANCE = isMobile ? 1.2 : 0.78;
 const TRANSITION_SPEED = 2.5;
 
 const DistortionShader = {
@@ -453,7 +453,14 @@ export class MonitorInteraction {
         const dy = t.clientY - this._touchTapStart.y;
         const dt = performance.now() - this._touchTapStart.time;
         if (Math.sqrt(dx * dx + dy * dy) < 15 && dt < 300) {
+          // Pass actual tap position for zoom-in view hit testing
+          const rect = this.canvas.getBoundingClientRect();
+          this._tapPoint = new THREE.Vector2(
+            ((t.clientX - rect.left) / rect.width) * 2 - 1,
+            -((t.clientY - rect.top) / rect.height) * 2 + 1,
+          );
           this._handleClick();
+          this._tapPoint = null;
         }
       });
       this._mobileReticle = document.getElementById('mobile-reticle');
@@ -492,7 +499,10 @@ export class MonitorInteraction {
     if (this.isTransitioning) return;
 
     if (this.isViewing) {
-      const clickOrigin = isMobile ? this._reticleCenter : this.mouse;
+      // On mobile, use actual tap position so user can tap outside the screen to exit
+      const clickOrigin = isMobile
+        ? (this._tapPoint || this._reticleCenter)
+        : this.mouse;
       this.raycaster.setFromCamera(clickOrigin, this.camera);
       const hits = this.raycaster.intersectObjects([this.selectedScreen]);
       if (hits.length > 0) {

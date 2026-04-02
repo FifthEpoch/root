@@ -37,12 +37,13 @@ export class NavigationControls {
     this._touchId = null;
     this._touchStartX = 0;
     this._touchStartY = 0;
-    this._touchDeltaX = 0;
-    this._touchDeltaY = 0;
+    this._touchPrevX = 0;
+    this._touchPrevY = 0;
     this._touchMoveSpeed = 3.0;
-    this._touchTurnSpeed = 0.004;
+    this._touchTurnSpeed = 0.003;
     this._touchMaxMoveSpeed = 4.0;
-    this._touchDeadzone = 8;
+    this._touchDeadzone = 6;
+    this._touchTurnDeadzone = 14;
 
     this._onMouseDown = this._onMouseDown.bind(this);
     this._onMouseMove = this._onMouseMove.bind(this);
@@ -122,8 +123,11 @@ export class NavigationControls {
     this._touchId = t.identifier;
     this._touchStartX = t.clientX;
     this._touchStartY = t.clientY;
-    this._touchDeltaX = 0;
-    this._touchDeltaY = 0;
+    this._touchPrevX = t.clientX;
+    this._touchPrevY = t.clientY;
+    this._touchFrameDX = 0;
+    this._touchFrameDY = 0;
+    this._touchTotalDY = 0;
   }
 
   _onTouchMove(e) {
@@ -131,8 +135,11 @@ export class NavigationControls {
     if (!this.enabled) return;
     for (const t of e.changedTouches) {
       if (t.identifier === this._touchId) {
-        this._touchDeltaX = t.clientX - this._touchStartX;
-        this._touchDeltaY = t.clientY - this._touchStartY;
+        this._touchFrameDX = t.clientX - this._touchPrevX;
+        this._touchFrameDY = t.clientY - this._touchPrevY;
+        this._touchTotalDY = t.clientY - this._touchStartY;
+        this._touchPrevX = t.clientX;
+        this._touchPrevY = t.clientY;
         break;
       }
     }
@@ -142,8 +149,9 @@ export class NavigationControls {
     for (const t of e.changedTouches) {
       if (t.identifier === this._touchId) {
         this._touchId = null;
-        this._touchDeltaX = 0;
-        this._touchDeltaY = 0;
+        this._touchFrameDX = 0;
+        this._touchFrameDY = 0;
+        this._touchTotalDY = 0;
         break;
       }
     }
@@ -192,21 +200,21 @@ export class NavigationControls {
       this._applyRotation();
     }
 
-    // Touch movement: vertical = walk, horizontal = turn (unless gyro active)
+    // Touch movement: per-frame dx for turning, accumulated dy for walking
     if (this._touchId !== null) {
-      const dx = this._touchDeltaX;
-      const dy = this._touchDeltaY;
+      const frameDX = this._touchFrameDX;
+      const totalDY = this._touchTotalDY;
 
-      // Horizontal: turn (yaw) — skip if gyroscope is handling rotation
-      if (Math.abs(dx) > this._touchDeadzone && !this._gyroEnabled) {
-        const turnAmount = dx * this._touchTurnSpeed;
-        this.yaw += turnAmount * dt * 60;
+      // Horizontal: turn (yaw) using per-frame delta — skip if gyro active
+      if (Math.abs(frameDX) > 1 && !this._gyroEnabled) {
+        this.yaw += frameDX * this._touchTurnSpeed;
         this._applyRotation();
       }
 
-      // Vertical: walk forward/backward (slide up = forward)
-      if (Math.abs(dy) > this._touchDeadzone) {
-        const rawSpeed = (dy - Math.sign(dy) * this._touchDeadzone) * 0.015;
+      // Vertical: walk forward/backward using accumulated distance from start
+      const walkDeadzone = 20;
+      if (Math.abs(totalDY) > walkDeadzone) {
+        const rawSpeed = (totalDY - Math.sign(totalDY) * walkDeadzone) * 0.012;
         const speed = Math.sign(rawSpeed) * Math.min(Math.abs(rawSpeed), this._touchMaxMoveSpeed);
 
         this.camera.getWorldDirection(this._direction);
@@ -216,6 +224,10 @@ export class NavigationControls {
         this.camera.position.z -= this._direction.z * speed * dt;
         moved = true;
       }
+
+      // Reset per-frame deltas (consumed)
+      this._touchFrameDX = 0;
+      this._touchFrameDY = 0;
     }
 
     this.isWalking = moved;
@@ -265,7 +277,7 @@ export class NavigationControls {
         let deltaBeta = e.beta - this._gyroBaseBeta;
         deltaBeta = Math.max(-45, Math.min(45, deltaBeta));
 
-        this.yaw = (this._gyroYawBase || this.yaw) - deltaAlpha * (Math.PI / 180);
+        this.yaw = (this._gyroYawBase || this.yaw) + deltaAlpha * (Math.PI / 180);
         this.pitch = deltaBeta * (Math.PI / 180);
         this.pitch = Math.max(-this.maxPitch, Math.min(this.maxPitch, this.pitch));
 
