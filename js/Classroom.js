@@ -1090,18 +1090,53 @@ function buildDoor(scene) {
     `,
     side: THREE.DoubleSide,
   });
+  // Void corridor: a short tunnel of TV-static that extends through the wall
+  // so the player never sees the beige wall while walking through.
+  const CORR_DEPTH = 1.8;
+  const corrGroup = new THREE.Group();
+  group.add(corrGroup);
+
+  // Front face (visible from inside the room)
   const voidGeo = new THREE.PlaneGeometry(DOOR_W + 0.02, DOOR_H + 0.02);
   const voidPlane = new THREE.Mesh(voidGeo, voidMat);
   voidPlane.position.set(0, DOOR_H / 2, 0.015);
-  group.add(voidPlane);
+  corrGroup.add(voidPlane);
 
-  // Wall patch sits in front of the void to hide it when the door is closed.
+  // Back face (end of corridor)
+  const corrBackGeo = new THREE.PlaneGeometry(DOOR_W + 0.02, DOOR_H + 0.02);
+  const corrBack = new THREE.Mesh(corrBackGeo, voidMat);
+  corrBack.position.set(0, DOOR_H / 2, 0.015 - CORR_DEPTH);
+  corrGroup.add(corrBack);
+
+  // Side walls
+  const corrSideGeo = new THREE.PlaneGeometry(CORR_DEPTH, DOOR_H + 0.02);
+  for (const side of [-1, 1]) {
+    const sw = new THREE.Mesh(corrSideGeo, voidMat);
+    sw.position.set(side * (DOOR_W / 2 + 0.01), DOOR_H / 2, 0.015 - CORR_DEPTH / 2);
+    sw.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
+    corrGroup.add(sw);
+  }
+
+  // Ceiling
+  const corrCapGeo = new THREE.PlaneGeometry(DOOR_W + 0.02, CORR_DEPTH);
+  const corrCeil = new THREE.Mesh(corrCapGeo, voidMat);
+  corrCeil.position.set(0, DOOR_H + 0.01, 0.015 - CORR_DEPTH / 2);
+  corrCeil.rotation.x = Math.PI / 2;
+  corrGroup.add(corrCeil);
+
+  // Floor
+  const corrFloor = new THREE.Mesh(corrCapGeo, voidMat);
+  corrFloor.position.set(0, -0.01, 0.015 - CORR_DEPTH / 2);
+  corrFloor.rotation.x = -Math.PI / 2;
+  corrGroup.add(corrFloor);
+
+  // Wall patch sits in front of the corridor to hide it when the door is closed.
   const wallPatchMat = new THREE.MeshStandardMaterial({
     color: 0xd2c9b8, roughness: 0.85, metalness: 0.0,
   });
   const wallPatchGeo = new THREE.PlaneGeometry(DOOR_W + FRAME_T * 2 + 0.04, DOOR_H + FRAME_T + 0.04);
   const wallPatch = new THREE.Mesh(wallPatchGeo, wallPatchMat);
-  wallPatch.position.set(0, DOOR_H / 2, 0.018);
+  wallPatch.position.set(0, DOOR_H / 2, 0.02);
   wallPatch.renderOrder = 1;
   group.add(wallPatch);
 

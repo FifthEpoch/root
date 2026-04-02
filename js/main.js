@@ -97,6 +97,61 @@ async function init() {
   let doorFalling = false;
   let doorFallTime = 0;
   let doorFallStartY = 0;
+  let doorFallStartPos = new THREE.Vector3();
+
+  // Fall shaft — vertical tunnel of TV static with glass panes
+  const fallShaft = new THREE.Group();
+  fallShaft.visible = false;
+  scene.add(fallShaft);
+
+  const SHAFT_W = 3.5;
+  const SHAFT_H = 80;
+  const SHAFT_D = 3.5;
+  const shaftVoidMat = door.voidMat.clone();
+  shaftVoidMat.uniforms = { uTime: { value: 0 } };
+
+  const shaftWallGeo = new THREE.PlaneGeometry(SHAFT_W, SHAFT_H);
+  const shaftSideGeo = new THREE.PlaneGeometry(SHAFT_D, SHAFT_H);
+  for (const cfg of [
+    { geo: shaftWallGeo, pos: [0, -SHAFT_H / 2, SHAFT_D / 2],  ry: Math.PI },
+    { geo: shaftWallGeo, pos: [0, -SHAFT_H / 2, -SHAFT_D / 2], ry: 0 },
+    { geo: shaftSideGeo, pos: [-SHAFT_W / 2, -SHAFT_H / 2, 0], ry: Math.PI / 2 },
+    { geo: shaftSideGeo, pos: [SHAFT_W / 2, -SHAFT_H / 2, 0],  ry: -Math.PI / 2 },
+  ]) {
+    const w = new THREE.Mesh(cfg.geo, shaftVoidMat);
+    w.position.set(...cfg.pos);
+    w.rotation.y = cfg.ry;
+    fallShaft.add(w);
+  }
+
+  // Glass panes at staggered depths for refraction/depth cues
+  const glassPanes = [];
+  for (let i = 0; i < 14; i++) {
+    const pw = SHAFT_W * (0.35 + Math.random() * 0.55);
+    const pd = SHAFT_D * (0.25 + Math.random() * 0.45);
+    const paneGeo = new THREE.PlaneGeometry(pw, pd);
+    const glassMat = new THREE.MeshPhysicalMaterial({
+      color: new THREE.Color().setHSL(0.55 + Math.random() * 0.1, 0.15, 0.85),
+      transparent: true,
+      opacity: 0.08 + Math.random() * 0.08,
+      roughness: 0.02,
+      metalness: 0.0,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    const pane = new THREE.Mesh(paneGeo, glassMat);
+    const y = -1.5 - i * 5 - Math.random() * 2;
+    pane.position.set(
+      (Math.random() - 0.5) * SHAFT_W * 0.4,
+      y,
+      (Math.random() - 0.5) * SHAFT_D * 0.4
+    );
+    pane.rotation.x = -Math.PI / 2 + (Math.random() - 0.5) * 0.3;
+    pane.rotation.z = (Math.random() - 0.5) * 0.2;
+    pane.userData.baseY = y;
+    fallShaft.add(pane);
+    glassPanes.push(pane);
+  }
 
   const controls = new NavigationControls(camera, canvas, {
     minZ: -roomDepth / 2,
@@ -455,29 +510,41 @@ async function init() {
     // Easter-egg door
     if (doorFalling) {
       doorFallTime += dt;
-      camera.position.y = doorFallStartY - doorFallTime * doorFallTime * 6;
+      shaftVoidMat.uniforms.uTime.value = elapsed;
+
+      // Quadratic fall through the static shaft
+      const fallY = doorFallStartY - doorFallTime * doorFallTime * 6;
+      camera.position.set(doorFallStartPos.x, fallY, doorFallStartPos.z);
+
+      // Position shaft so its top aligns with the fall start
+      fallShaft.position.set(doorFallStartPos.x, doorFallStartY, doorFallStartPos.z);
+
+      // Gentle tumble
       const rollQ = new THREE.Quaternion().setFromAxisAngle(
-        new THREE.Vector3(0, 0, 1), doorFallTime * 1.2
+        new THREE.Vector3(0, 0, 1), doorFallTime * 0.8
       );
       const baseQ = new THREE.Quaternion().setFromEuler(
-        new THREE.Euler(controls.pitch - doorFallTime * 0.3, controls.yaw, 0, 'YXZ')
+        new THREE.Euler(-Math.PI * 0.35 - doorFallTime * 0.15, controls.yaw, 0, 'YXZ')
       );
       camera.quaternion.copy(baseQ).multiply(rollQ);
 
-      // Shift background gradually to pure black during fall
-      const t = Math.min(doorFallTime / 2.0, 1.0);
-      const v = 0.03 * (1.0 - t);
-      scene.background.setRGB(v, v, v * 1.3);
+      // Fade glass panes as player falls past them
+      for (const p of glassPanes) {
+        const worldY = fallShaft.position.y + p.userData.baseY;
+        const dy = camera.position.y - worldY;
+        const vis = 1.0 - Math.min(Math.abs(dy) / 8, 1.0);
+        p.material.opacity = (0.08 + Math.random() * 0.04) * vis + 0.02;
+      }
 
       if (doorFallTime > 2.0) {
         doorFalling = false;
+        fallShaft.visible = false;
         scene.background = new THREE.Color(0xd0c8b8);
         camera.position.copy(SPAWN_POS);
         controls.yaw = SPAWN_YAW;
         controls.pitch = SPAWN_PITCH;
         controls._applyRotation();
         controls.enabled = true;
-        // Restore room bounds
         controls.minZ = -roomDepth / 2;
         controls.maxZ = roomDepth / 2 + 1;
         controls.minX = -roomWidth / 2 + 0.5;
@@ -508,10 +575,8 @@ async function init() {
       door.panelPivot.rotation.y = door.doorAngle;
       door.isOpen = Math.abs(door.doorAngle) > 0.3;
 
-      // Hide wall patch when door opens to reveal the blue void
       door.wallPatch.visible = Math.abs(door.doorAngle) < 0.05;
 
-      // Expand room bounds near open door so player can walk through
       if (door.isOpen && doorDist < door.OPEN_DIST + 1) {
         controls.minZ = -roomDepth / 2 - 4;
         controls.maxZ = roomDepth / 2 + 4;
@@ -524,15 +589,17 @@ async function init() {
         controls.maxX = roomWidth / 2 - 0.3;
       }
 
-      // Check if player walked through the open door past the wall
+      // Trigger fall once player steps just past the door threshold
       if (door.isOpen) {
         const localPos = door.group.worldToLocal(camera.position.clone());
-        if (localPos.z < -0.4 && Math.abs(localPos.x) < door.DOOR_W / 2 + 0.5) {
+        if (localPos.z < -0.15 && Math.abs(localPos.x) < door.DOOR_W / 2 + 0.3) {
           doorFalling = true;
           doorFallTime = 0;
           doorFallStartY = camera.position.y;
+          doorFallStartPos.copy(camera.position);
           controls.enabled = false;
-          scene.background = new THREE.Color(0x080810);
+          scene.background = new THREE.Color(0x0a0a10);
+          fallShaft.visible = true;
         }
       }
     }
