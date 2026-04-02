@@ -54,7 +54,7 @@ html, body {
 #landing-video {
   position: absolute;
   top: 50%;
-  left: 45%;
+  left: 38%;
   transform: translate(-50%, -50%);
   min-width: 100%;
   min-height: 100%;
@@ -76,7 +76,7 @@ html, body {
   z-index: 1;
   pointer-events: none;
   background:
-    radial-gradient(ellipse at 45% 50%, transparent 30%, #0a0a0a 75%);
+    radial-gradient(ellipse at 38% 50%, transparent 25%, #0a0a0a 70%);
 }
 
 /* ---------- Landing page ---------- */
@@ -94,9 +94,10 @@ html, body {
   font-size: 1.15rem;
   line-height: 1.7;
   letter-spacing: 0.02em;
-  color: #bbb;
+  color: #fff;
   margin-bottom: 2.4rem;
   font-weight: 300;
+  mix-blend-mode: difference;
 }
 
 #enter-btn {
@@ -111,15 +112,16 @@ html, body {
   text-transform: uppercase;
   color: #fff;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border: 1px solid #fff;
   border-radius: 4px;
   cursor: pointer;
+  mix-blend-mode: difference;
   transition: background 0.3s, border-color 0.3s, color 0.3s;
 }
 
 #enter-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: #fff;
   color: #fff;
 }
 
@@ -162,7 +164,7 @@ html, body {
 
 #mobile-reticle {
   position: fixed;
-  top: 42%;
+  top: 46%;
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 40;

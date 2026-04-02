@@ -38,20 +38,31 @@ export class AudioManager {
     if (this._started) return;
     this._started = true;
     this._startTime = performance.now();
-    this._ambience.play().catch(() => {});
 
-    // Pre-warm all audio so mobile browsers unlock them for later use
-    const warm = (el) => el.play().then(() => {
-      el.pause();
-      el.currentTime = 0;
+    // Pre-warm all audio elements so mobile browsers unlock them.
+    // Keep volume at 0 during warm-up so nothing is audible.
+    const warm = (el) => {
       el.volume = 0;
-    }).catch(() => {});
+      return el.play().then(() => {
+        el.pause();
+        el.currentTime = 0;
+        el.volume = 0;
+      }).catch(() => {});
+    };
 
     Promise.all([
+      warm(this._ambience),
       warm(this._serverNoise),
       warm(this._footsteps),
       warm(this._distortion),
-    ]).then(() => { this._ready = true; });
+    ]).then(() => {
+      this._ready = true;
+      // Start ambience only after all pre-warm is done
+      if (!this._muted) {
+        this._ambience.volume = 0;
+        this._ambience.play().catch(() => {});
+      }
+    });
   }
 
   toggleMute() {

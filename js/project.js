@@ -196,10 +196,11 @@ scene.add(dirLight);
 
 /* ── carousel constants ── */
 
-const CENTER = new THREE.Vector3(4.0, 0.0, -0.5);
-const RADIUS = 1.6;
-const MAX_W = 1.4;
-const MAX_H = 1.4;
+const isMobileDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+const CENTER = new THREE.Vector3(4.0, isMobileDevice ? 0.3 : 0.0, -0.5);
+const RADIUS = isMobileDevice ? 1.6 : 2.0;
+const MAX_W = isMobileDevice ? 1.4 : 1.9;
+const MAX_H = isMobileDevice ? 1.4 : 1.9;
 
 /* ── enlarged gallery constants ── */
 
@@ -247,8 +248,6 @@ for (let i = 0; i < media.length; i++) {
 }
 
 if (media.length > 0) document.body.classList.add('carousel-active');
-
-const isMobileDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
 /* ── offset carousel below sticky header on mobile ── */
 if (isMobileDevice && media.length > 0) {
@@ -481,6 +480,20 @@ function getScrollProgress() {
   return max <= 0 ? 0 : Math.max(0, Math.min(1, window.scrollY / max));
 }
 
+// Detect when text body is scrolled out of view
+const pageBody = document.querySelector('.page-body');
+function getTextScrolledPast() {
+  if (!pageBody) return 0;
+  const rect = pageBody.getBoundingClientRect();
+  if (rect.bottom > window.innerHeight * 0.3) return 0;
+  const gone = Math.min(1, (window.innerHeight * 0.3 - rect.bottom) / (window.innerHeight * 0.3));
+  return Math.max(0, Math.min(1, gone));
+}
+
+// Closer camera Z when text is scrolled away
+const CAM_Z_FAR = 5.2;
+const CAM_Z_CLOSE = 3.6;
+
 /* ── lerp ── */
 
 const LERP = 0.1;
@@ -550,9 +563,16 @@ function animate() {
       expanded = false;
     }
 
-    const progress = Math.min(getScrollProgress() / 0.92, 1);
+    // Dynamic scroll: more images → faster scroll so each still gets its moment
+    const scrollSpeed = Math.max(1.0, 1.0 + (planes.length - 6) * 0.12);
+    const progress = Math.min((getScrollProgress() * scrollSpeed) / 0.92, 1);
     const autoFocus = progress * planes.length;
     const focus = autoFocus + manualOffset;
+
+    // Zoom in once text is scrolled away
+    const textGone = getTextScrolledPast();
+    const targetCamZ = CAM_Z_FAR + (CAM_Z_CLOSE - CAM_Z_FAR) * textGone;
+    const scaleBump = 1.0 + textGone * 0.3;
 
     for (let i = 0; i < planes.length; i++) {
       const mesh = planes[i];
@@ -565,7 +585,7 @@ function animate() {
       const ry = -angle * 0.42;
       const rz = -Math.sin(angle) * 0.06;
       const opacity = 0.15 + weight * 0.85;
-      const sf = 0.55 + weight * 0.5;
+      const sf = (0.55 + weight * 0.5) * scaleBump;
 
       const bw = mesh.userData.baseW;
       const bh = mesh.userData.baseH;
@@ -589,7 +609,7 @@ function animate() {
 
     camera.position.x += (0 - camera.position.x) * LERP;
     camera.position.y += (0 - camera.position.y) * LERP;
-    camera.position.z += (5.2 - camera.position.z) * LERP;
+    camera.position.z += (targetCamZ - camera.position.z) * LERP;
     camera.lookAt(CENTER.x, CENTER.y, CENTER.z);
   }
 

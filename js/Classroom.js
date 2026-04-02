@@ -1101,7 +1101,7 @@ function buildDoor(scene) {
   });
   const wallPatchGeo = new THREE.PlaneGeometry(DOOR_W + FRAME_T * 2 + 0.04, DOOR_H + FRAME_T + 0.04);
   const wallPatch = new THREE.Mesh(wallPatchGeo, wallPatchMat);
-  wallPatch.position.set(0, DOOR_H / 2, 0.025);
+  wallPatch.position.set(0, DOOR_H / 2, 0.018);
   wallPatch.renderOrder = 1;
   group.add(wallPatch);
 

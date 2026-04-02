@@ -194,28 +194,43 @@ export class ScreenController {
     screen.listItemRects = [];
 
     ctx.font = `${fontSize}px "Courier New", monospace`;
+    const maxTextW = rw - pad * 2;
     for (let i = 0; i < children.length; i++) {
       const child = children[i];
       const title = child.title;
 
       ctx.fillStyle = '#4488ff';
-      const metrics = ctx.measureText(title);
-      const textW = Math.min(metrics.width, rw - pad * 2);
 
-      // Store hit rect in rotated canvas coordinates
+      // Word-wrap long titles
+      const words = title.split(' ');
+      const lines = [];
+      let currentLine = '';
+      for (const word of words) {
+        const testLine = currentLine ? `${currentLine} ${word}` : word;
+        if (ctx.measureText(testLine).width > maxTextW && currentLine) {
+          lines.push(currentLine);
+          currentLine = word;
+        } else {
+          currentLine = testLine;
+        }
+      }
+      if (currentLine) lines.push(currentLine);
+
+      const itemH = lines.length * lineHeight;
       screen.listItemRects.push({
         x: pad,
         y: y - fontSize,
-        w: textW,
-        h: lineHeight,
+        w: maxTextW,
+        h: itemH,
         childIndex: i,
       });
 
-      // Underline
-      ctx.fillText(title, pad, y);
-      ctx.fillRect(pad, y + 2, textW, 1);
-
-      y += lineHeight;
+      for (const line of lines) {
+        ctx.fillText(line, pad, y);
+        const lineW = ctx.measureText(line).width;
+        ctx.fillRect(pad, y + 2, lineW, 1);
+        y += lineHeight;
+      }
     }
 
     ctx.globalAlpha = 1.0;

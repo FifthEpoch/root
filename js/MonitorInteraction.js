@@ -83,7 +83,7 @@ export class MonitorInteraction {
 
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
-    this._reticleCenter = new THREE.Vector2(0, 0.16);
+    this._reticleCenter = new THREE.Vector2(0, 0.08);
 
     this.hoveredScreen = null;
     this.selectedScreen = null;

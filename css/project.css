@@ -214,6 +214,14 @@ body.carousel-active .page-body { color: #fff; }
 body.carousel-active .page-body h2 { mix-blend-mode: difference; }
 body.carousel-active .page-body p { mix-blend-mode: difference; }
 
+@media (pointer: coarse) {
+  body.carousel-active .page-body { color: #111; }
+  body.carousel-active .page-body h2 { mix-blend-mode: normal; }
+  body.carousel-active .page-body p { mix-blend-mode: normal; }
+  body.carousel-active .page-body a { color: #0000EE; }
+  body.carousel-active .page-body a:visited { color: #551A8B; }
+}
+
 .page-body a {
   color: #0000EE;
   text-decoration: underline;
