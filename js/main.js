@@ -399,7 +399,7 @@ async function init() {
     screenController.update(elapsed);
 
     const isHovering = !!monitorInteraction.hoveredScreen && !monitorInteraction.isViewing && !monitorInteraction.isTransitioning;
-    audioManager.update(dt, controls.isWalking, isHovering);
+    audioManager.update(dt, controls.isWalking, isMobile ? false : isHovering);
 
     for (const led of leds) {
       if (rackHovered) {
@@ -510,8 +510,8 @@ async function init() {
     // Skeleton hover triggers color stripping via MonitorInteraction
     monitorInteraction.externalHoverGroup = skelHovered ? skeletonGroup : null;
 
-    // Accordion audio for skeleton hover
-    if (skelHovered && !prevSkelHovered && !audioManager.muted) {
+    // Accordion audio for skeleton hover (desktop only)
+    if (!isMobile && skelHovered && !prevSkelHovered && !audioManager.muted) {
       accordionAudio.currentTime = 0;
       accordionAudio.volume = 0.6;
       accordionAudio.play().catch(() => {});
