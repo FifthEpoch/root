@@ -115,9 +115,9 @@ export const projects = [
     subtitle:
       'Sensitive information, such as banned books and protest organization communications, require secure channels to evade private or state surveillance. This project aims to provide public access to a secure steganographic system for additional privacy in communications and underground publishing.',
     links: [
+      link('Web Tool', 'https://main.d3v90zo52exf1d.amplifyapp.com/'),
+      link('Research Doc', 'https://pub-c13cdb673b934fa282c9bb3c6f22046e.r2.dev/projects/pixel-ninja/pdf/PixelStacks__High_Capacity_Image_Steganography_for_Censorship_Circumvention_of_Long_Form_Content.pdf'),
       link('GitHub Repo', 'https://github.com/FifthEpoch/Chaos_LSB'),
-      link('Live Site', 'http://bit.ly/hide-text'),
-      link('Submitted Paper', 'https://9461f41e-2398-4aea-8ada-50b130d273fa.filesusr.com/ugd/2b95c6_cb6f65b4bb6748d49ab899ca6dcb3328.pdf'),
     ],
     manifestPath: 'projects/keyword-censorship/manifest.txt',
     captions: [],
