@@ -672,7 +672,112 @@ function buildServerRack(scene) {
   rackGlow.position.set(rackX + rackD / 2 + 0.3, rackH * 0.6, rackZ);
   scene.add(rackGlow);
 
-  return { leds, rackPosition: new THREE.Vector3(rackX, rackH / 2, rackZ), rackHitbox, rackGlow };
+  // Orbiting text rows
+  const rackTextRows = buildRackText(scene, rackX, rackZ, rackW, rackD, rackH);
+
+  return { leds, rackPosition: new THREE.Vector3(rackX, rackH / 2, rackZ), rackHitbox, rackGlow, rackTextRows };
+}
+
+function buildRackText(scene, rackX, rackZ, rackW, rackD, rackH) {
+  const texts = [
+    'git git git git ',
+    'got got got got ',
+    'blood rush to my git hub hot log ',
+  ];
+  const heights = [rackH * 0.82, rackH * 0.55, rackH * 0.28];
+  const padX = 0.22, padZ = 0.22;
+  const halfD = rackD / 2 + padX;
+  const halfW = rackW / 2 + padZ;
+  const perimeter = 2 * (halfD * 2 + halfW * 2);
+
+  // Rectangular path: parameterized by distance d along the perimeter
+  // Starts at front-right corner, goes clockwise viewed from above
+  const sides = [
+    { axis: 'z', sign: 1, len: halfW * 2, fixedX: halfD, rotY: 0 },
+    { axis: 'x', sign: -1, len: halfD * 2, fixedZ: halfW, rotY: Math.PI / 2 },
+    { axis: 'z', sign: -1, len: halfW * 2, fixedX: -halfD, rotY: Math.PI },
+    { axis: 'x', sign: 1, len: halfD * 2, fixedZ: -halfW, rotY: -Math.PI / 2 },
+  ];
+
+  function posOnPath(d) {
+    let rem = ((d % perimeter) + perimeter) % perimeter;
+    let cumLen = 0;
+    for (const side of sides) {
+      if (rem < cumLen + side.len) {
+        const t = rem - cumLen;
+        const frac = t / side.len - 0.5;
+        let x, z, ry;
+        if (side.axis === 'z') {
+          x = rackX + side.fixedX;
+          z = rackZ + frac * side.len * side.sign;
+          ry = side.rotY;
+        } else {
+          z = rackZ + side.fixedZ;
+          x = rackX + frac * side.len * side.sign;
+          ry = side.rotY;
+        }
+        return { x, z, ry };
+      }
+      cumLen += side.len;
+    }
+    return { x: rackX + halfD, z: rackZ, ry: 0 };
+  }
+
+  function makeTextCanvas(text, fontSize) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.font = `bold ${fontSize}px monospace`;
+    const metrics = ctx.measureText(text);
+    canvas.width = Math.ceil(metrics.width) + 8;
+    canvas.height = fontSize + 8;
+    ctx.font = `bold ${fontSize}px monospace`;
+    ctx.fillStyle = '#44ccff';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, 4, canvas.height / 2);
+    return canvas;
+  }
+
+  const rows = [];
+  const segCount = 14;
+
+  for (let r = 0; r < texts.length; r++) {
+    const row = [];
+    const fullText = texts[r];
+    const words = fullText.trim().split(' ');
+    const y = heights[r];
+
+    for (let i = 0; i < segCount; i++) {
+      const word = words[i % words.length];
+      const canvas = makeTextCanvas(word, 48);
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+
+      const charW = canvas.width / canvas.height;
+      const planeH = 0.12;
+      const planeW = planeH * charW;
+
+      const mat = new THREE.MeshBasicMaterial({
+        map: tex,
+        transparent: true,
+        opacity: 0,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      });
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(planeW, planeH), mat);
+      mesh.position.y = y;
+      mesh.renderOrder = 999;
+      scene.add(mesh);
+
+      row.push({
+        mesh,
+        pathOffset: (i / segCount) * perimeter,
+        speed: 0.6 + r * 0.15,
+      });
+    }
+    rows.push(row);
+  }
+
+  return { rows, posOnPath, perimeter };
 }
 
 function buildRoom(scene) {

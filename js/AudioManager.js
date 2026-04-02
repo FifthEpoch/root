@@ -4,6 +4,8 @@ export class AudioManager {
     this._rackPos = rackPosition;
     this._muted = false;
     this._started = false;
+    this._ready = false;
+    this._startTime = 0;
 
     this._ambience = new Audio('media/aud/ambience_room.mp3');
     this._ambience.loop = true;
@@ -35,11 +37,10 @@ export class AudioManager {
   start() {
     if (this._started) return;
     this._started = true;
-    this._ready = false;
+    this._startTime = performance.now();
     this._ambience.play().catch(() => {});
 
-    // Pre-warm: briefly play then pause to unlock audio context on mobile.
-    // Block update() until all have settled so they don't audibly bleed.
+    // Pre-warm all audio so mobile browsers unlock them for later use
     const warm = (el) => el.play().then(() => {
       el.pause();
       el.currentTime = 0;
@@ -81,13 +82,15 @@ export class AudioManager {
   update(dt, isWalking, isHovering) {
     if (!this._started || !this._ready || this._muted) return;
 
+    // Grace period: ignore first 500ms after start to let pre-warm settle
+    if (performance.now() - this._startTime < 500) return;
+
     const camPos = this._camera.position;
 
     // Ambience: always on, fade in
-    const ambTarget = this._targetAmbienceVol;
-    this._ambience.volume = this._lerp(this._ambience.volume, ambTarget, dt * 2.0);
+    this._ambience.volume = this._lerp(this._ambience.volume, this._targetAmbienceVol, dt * 2.0);
 
-    // Server noise: proximity-based, only play when close enough
+    // Server noise: proximity-based
     const dx = camPos.x - this._rackPos.x;
     const dz = camPos.z - this._rackPos.z;
     const dist = Math.sqrt(dx * dx + dz * dz);
@@ -106,7 +109,7 @@ export class AudioManager {
       this._serverNoise.volume = this._lerp(this._serverNoise.volume, serverTarget, dt * 3.0);
     }
 
-    // Footsteps: play while walking, pause when stopped
+    // Footsteps: play/pause based on walking state
     if (isWalking && !this._footPlaying) {
       this._footsteps.currentTime = 0;
       this._footsteps.volume = this._footstepVol;
@@ -118,9 +121,9 @@ export class AudioManager {
       this._footPlaying = false;
     }
 
-    // Distortion: play while hovering, pause when not
+    // Distortion: play/pause based on hover state
+    // Don't reset currentTime to avoid audio glitches on repeated triggers
     if (isHovering && !this._distPlaying) {
-      this._distortion.currentTime = 0;
       this._distortion.volume = this._distortionVol;
       this._distortion.play().catch(() => {});
       this._distPlaying = true;

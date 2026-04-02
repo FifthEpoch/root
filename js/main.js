@@ -30,7 +30,7 @@ scene.background = new THREE.Color(0xd0c8b8);
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
 
 async function init() {
-  const { screenMeshes, leds, rackPosition, rackHitbox, rackGlow, projectorScreenMesh, projectorScreenPos, roomWidth, roomDepth, tableZ } = await buildClassroom(scene);
+  const { screenMeshes, leds, rackPosition, rackHitbox, rackGlow, rackTextRows, projectorScreenMesh, projectorScreenPos, roomWidth, roomDepth, tableZ } = await buildClassroom(scene);
 
   // Check if returning from a project page with saved camera state
   const urlParams = new URLSearchParams(window.location.search);
@@ -283,6 +283,23 @@ async function init() {
 
     const rackGlowTarget = rackHovered ? 2.0 : 0;
     rackGlow.intensity += (rackGlowTarget - rackGlow.intensity) * Math.min(dt * 4.0, 1.0);
+
+    // Orbiting text around rack
+    if (rackTextRows) {
+      const targetOpacity = rackHovered ? 1.0 : 0.0;
+      for (const row of rackTextRows.rows) {
+        for (const seg of row) {
+          const d = seg.pathOffset + elapsed * seg.speed * rackTextRows.perimeter * 0.12;
+          const p = rackTextRows.posOnPath(d);
+          seg.mesh.position.x = p.x;
+          seg.mesh.position.z = p.z;
+          seg.mesh.rotation.y = p.ry;
+          const curOp = seg.mesh.material.opacity;
+          seg.mesh.material.opacity += (targetOpacity - curOp) * Math.min(dt * 5.0, 1.0);
+          seg.mesh.visible = seg.mesh.material.opacity > 0.01;
+        }
+      }
+    }
 
     canvas.style.cursor = rackHovered ? 'pointer' : '';
 
