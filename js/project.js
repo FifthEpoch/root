@@ -529,10 +529,22 @@ function animate() {
       const ry = Math.sign(offset) * Math.min(absOffset * EXP_SLANT, Math.PI * 0.4);
       const rz = 0;
       const opacity = Math.max(0.04, 1 - absOffset * EXP_FADE);
-      const sf = absOffset < 0.3 ? EXP_FOCUS_SCALE : EXP_OTHER_SCALE + Math.max(0, 0.3 - absOffset * 0.15);
 
       const bw = mesh.userData.baseW;
       const bh = mesh.userData.baseH;
+
+      // Cap focus scale so image fits within 85% of viewport with margins
+      let sf;
+      if (absOffset < 0.3) {
+        const halfFovRad = (camera.fov / 2) * Math.PI / 180;
+        const visH = 2 * EXP_CAM_Z * Math.tan(halfFovRad) * 0.85;
+        const visW = visH * camera.aspect * 0.85;
+        const maxSfH = bh > 0.01 ? visH / bh : EXP_FOCUS_SCALE;
+        const maxSfW = bw > 0.01 ? visW / bw : EXP_FOCUS_SCALE;
+        sf = Math.min(EXP_FOCUS_SCALE, maxSfH, maxSfW);
+      } else {
+        sf = EXP_OTHER_SCALE + Math.max(0, 0.3 - absOffset * 0.15);
+      }
       mesh.position.x += (tx - mesh.position.x) * LERP;
       mesh.position.y += (ty - mesh.position.y) * LERP;
       mesh.position.z += (tz - mesh.position.z) * LERP;
@@ -584,20 +596,23 @@ function animate() {
       const tz = CENTER.z + Math.cos(angle) * RADIUS * 0.92;
       const ry = -angle * 0.42;
       const rz = -Math.sin(angle) * 0.06;
-      const opacity = 0.15 + weight * 0.85;
-      const sf = (0.55 + weight * 0.5) * scaleBump;
-
       const bw = mesh.userData.baseW;
       const bh = mesh.userData.baseH;
+      const isHov = (i === hoveredIndex);
+      const hovBump = isHov ? 1.12 : 1.0;
+      const opacity = isHov ? 1.0 : (0.3 + weight * 0.7);
+      const sf = (0.65 + weight * 0.4) * scaleBump * hovBump;
+      const finalZ = isHov ? Math.max(tz, CENTER.z + RADIUS * 0.92 + 0.3) : tz;
+
       mesh.position.x += (tx - mesh.position.x) * LERP;
       mesh.position.y += (ty - mesh.position.y) * LERP;
-      mesh.position.z += (tz - mesh.position.z) * LERP;
+      mesh.position.z += (finalZ - mesh.position.z) * LERP;
       mesh.rotation.y += (ry - mesh.rotation.y) * LERP;
       mesh.rotation.z += (rz - mesh.rotation.z) * LERP;
       mesh.scale.x += (bw * sf - mesh.scale.x) * LERP;
       mesh.scale.y += (bh * sf - mesh.scale.y) * LERP;
       mesh.material.opacity += (opacity - mesh.material.opacity) * LERP;
-      mesh.renderOrder = Math.round(weight * 10);
+      mesh.renderOrder = isHov ? 20 : Math.round(weight * 10);
       mesh.visible = mesh.material.opacity > 0.03;
     }
 

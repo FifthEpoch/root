@@ -69,6 +69,8 @@ body.carousel-expanded #media-canvas {
   z-index: 11;
   pointer-events: auto;
   cursor: default;
+  top: 0;
+  height: 100%;
 }
 
 #media-close {

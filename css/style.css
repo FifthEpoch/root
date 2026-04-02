@@ -54,7 +54,7 @@ html, body {
 #landing-video {
   position: absolute;
   top: 50%;
-  left: 38%;
+  left: 32%;
   transform: translate(-50%, -50%);
   min-width: 100%;
   min-height: 100%;
@@ -76,7 +76,7 @@ html, body {
   z-index: 1;
   pointer-events: none;
   background:
-    radial-gradient(ellipse at 38% 50%, transparent 25%, #0a0a0a 70%);
+    radial-gradient(ellipse at 32% 50%, transparent 25%, #0a0a0a 70%);
 }
 
 /* ---------- Landing page ---------- */
