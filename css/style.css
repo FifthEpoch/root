@@ -130,7 +130,7 @@ html, body {
 
 #mobile-reticle {
   position: fixed;
-  top: 50%;
+  top: 42%;
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 40;
@@ -271,5 +271,29 @@ kbd {
 #cv-link:hover {
   background: rgba(0, 0, 0, 0.75);
   color: #ddd;
+}
+
+/* ---------- Mobile layout overrides ---------- */
+
+@media (pointer: coarse) {
+  #controls-hint {
+    left: 1.2rem;
+    right: auto;
+    transform: none;
+    max-width: 52vw;
+    font-size: 0.7rem;
+    padding: 0.5rem 0.8rem;
+  }
+
+  #lab-ui {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.4rem;
+  }
+
+  #cv-link {
+    font-size: 0.7rem;
+    padding: 0.5rem 0.8rem;
+  }
 }
 

@@ -6,6 +6,10 @@
   box-sizing: border-box;
 }
 
+html {
+  overflow-x: hidden;
+}
+
 body {
   font-family: 'Courier New', Courier, monospace;
   font-size: 15px;
@@ -13,6 +17,7 @@ body {
   background: #fff;
   color: #111;
   overflow-x: hidden;
+  max-width: 100vw;
 }
 
 /* ── Canvas: fixed full-screen behind everything ── */
@@ -26,9 +31,17 @@ body {
   pointer-events: none;
 }
 
+@media (pointer: coarse) {
+  #media-canvas {
+    top: var(--carousel-top, 0);
+    height: calc(100% - var(--carousel-top, 0px));
+  }
+}
+
 body.carousel-active #media-canvas {
   pointer-events: auto;
   cursor: grab;
+  touch-action: none;
 }
 
 body.carousel-active #media-canvas:active {
@@ -86,7 +99,13 @@ body.carousel-expanded #media-close {
 .page-shell {
   position: relative;
   max-width: 520px;
-  padding: 0 2.5rem;
+  padding: 0 1.5rem;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+@media (min-width: 600px) {
+  .page-shell { padding: 0 2.5rem; }
 }
 
 /* ── Sticky header: solid white, extends full viewport width ── */
@@ -102,22 +121,30 @@ body.carousel-expanded #media-close {
   content: '';
   position: absolute;
   inset: 0;
-  left: -2.5rem;
-  right: -100vw;
+  left: -1.5rem;
+  right: -1.5rem;
   background: #fff;
   z-index: -1;
+}
+
+@media (min-width: 600px) {
+  .page-header::before { left: -2.5rem; right: -2.5rem; }
 }
 
 .page-header::after {
   content: '';
   position: absolute;
-  left: -2.5rem;
-  right: -100vw;
-  bottom: -1rem;
-  height: 1rem;
+  left: -1.5rem;
+  right: -1.5rem;
+  bottom: -0.6rem;
+  height: 0.6rem;
   background: linear-gradient(to bottom, #fff 0%, rgba(255, 255, 255, 0) 100%);
   pointer-events: none;
   z-index: -1;
+}
+
+@media (min-width: 600px) {
+  .page-header::after { left: -2.5rem; right: -2.5rem; }
 }
 
 .back-nav {
@@ -135,10 +162,11 @@ body.carousel-expanded #media-close {
 }
 
 .page-header h1 {
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   font-weight: 700;
   margin-bottom: 0.3rem;
   text-transform: lowercase;
+  line-height: 1.25;
 }
 
 .page-header p {
@@ -167,7 +195,7 @@ body.carousel-expanded #media-close {
 
 .page-body {
   position: relative;
-  color: #fff;
+  color: #111;
   padding-bottom: 6rem;
 }
 
@@ -176,18 +204,27 @@ body.carousel-expanded #media-close {
   font-weight: 700;
   margin: 2.2rem 0 0.6rem;
   text-transform: lowercase;
-  mix-blend-mode: difference;
 }
 
 .page-body p {
   margin-bottom: 0.85rem;
-  mix-blend-mode: difference;
 }
 
+body.carousel-active .page-body { color: #fff; }
+body.carousel-active .page-body h2 { mix-blend-mode: difference; }
+body.carousel-active .page-body p { mix-blend-mode: difference; }
+
 .page-body a {
-  color: #aaf;
+  color: #0000EE;
   text-decoration: underline;
 }
+
+.page-body a:visited {
+  color: #551A8B;
+}
+
+body.carousel-active .page-body a { color: #aaf; }
+body.carousel-active .page-body a:visited { color: #c8a2d8; }
 
 /* ── Project list (collections) ── */
 
@@ -224,6 +261,7 @@ body.carousel-expanded #media-close {
 
 .video-embed iframe {
   width: 100%;
+  max-width: 100%;
   aspect-ratio: 16 / 9;
   border: none;
   display: block;

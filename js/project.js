@@ -248,6 +248,22 @@ for (let i = 0; i < media.length; i++) {
 
 if (media.length > 0) document.body.classList.add('carousel-active');
 
+const isMobileDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+/* ── offset carousel below sticky header on mobile ── */
+if (isMobileDevice && media.length > 0) {
+  const pageHeader = document.querySelector('.page-header');
+  if (pageHeader) {
+    const updateCarouselTop = () => {
+      const hh = pageHeader.getBoundingClientRect().height;
+      const padding = 16;
+      document.documentElement.style.setProperty('--carousel-top', `${hh + padding}px`);
+    };
+    updateCarouselTop();
+    window.addEventListener('resize', updateCarouselTop);
+  }
+}
+
 camera.lookAt(CENTER.x, CENTER.y, CENTER.z);
 
 /* ── interaction state ── */
@@ -392,6 +408,37 @@ canvas.addEventListener('pointercancel', (e) => {
   expPointerMoved = false;
   try { canvas.releasePointerCapture(e.pointerId); } catch {}
 });
+
+/* ── mobile: tap through page layer to reach carousel images ── */
+if (isMobileDevice && media.length > 0) {
+  let tapStart = null;
+  document.addEventListener('touchstart', (e) => {
+    if (selectedIndex >= 0) return;
+    const t = e.touches[0];
+    tapStart = { x: t.clientX, y: t.clientY, time: performance.now() };
+  }, { passive: true });
+
+  document.addEventListener('touchend', (e) => {
+    if (!tapStart || selectedIndex >= 0) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - tapStart.x;
+    const dy = t.clientY - tapStart.y;
+    const dt = performance.now() - tapStart.time;
+    tapStart = null;
+    if (Math.sqrt(dx * dx + dy * dy) > 20 || dt > 400) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = ((t.clientX - rect.left) / rect.width) * 2 - 1;
+    const my = -((t.clientY - rect.top) / rect.height) * 2 + 1;
+    const tapMouse = new THREE.Vector2(mx, my);
+    raycaster.setFromCamera(tapMouse, camera);
+    const hits = raycaster.intersectObjects(planes.filter(m => m.visible));
+    if (hits.length) {
+      selectedIndex = hits[0].object.userData.index;
+      expandedFocus = selectedIndex;
+      expandedDragOffset = 0;
+    }
+  });
+}
 
 function exitExpanded() {
   selectedIndex = -1;

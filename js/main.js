@@ -88,21 +88,35 @@ async function init() {
     soundOffIcon.style.display = muted ? '' : 'none';
   });
 
-  // Gyroscope toggle (mobile only)
+  // Gyroscope toggle (mobile only, auto-enable if sensor available)
   const gyroToggle = document.getElementById('gyro-toggle');
   if (isMobile && gyroToggle) {
     gyroToggle.style.display = '';
+
+    const activateGyro = async () => {
+      const ok = await controls.enableGyro();
+      if (ok) {
+        gyroToggle.classList.add('active');
+        sessionStorage.setItem('gyroEnabled', '1');
+      }
+      return ok;
+    };
+
     gyroToggle.addEventListener('click', async () => {
       if (controls.gyroEnabled) {
         controls.disableGyro();
         gyroToggle.classList.remove('active');
+        sessionStorage.setItem('gyroEnabled', '0');
       } else {
-        const ok = await controls.enableGyro();
-        if (ok) {
-          gyroToggle.classList.add('active');
-        }
+        await activateGyro();
       }
     });
+
+    // Auto-enable: restore from session or try on first load
+    const gyroSaved = sessionStorage.getItem('gyroEnabled');
+    if (gyroSaved !== '0') {
+      activateGyro();
+    }
   }
 
   const cvLink = document.getElementById('cv-link');
@@ -159,7 +173,7 @@ async function init() {
   const RACK_HOVER_RANGE = 4.0;
 
   // On mobile, projector and rack use screen center for raycasting
-  const screenCenter = new THREE.Vector2(0, 0);
+  const screenCenter = new THREE.Vector2(0, 0.16);
   const mobileReticle = document.getElementById('mobile-reticle');
 
   if (!isMobile) {
@@ -237,8 +251,9 @@ async function init() {
     }
 
     if (projHovered && !projPlaying) {
-      projectorVideo.muted = false;
-      projectorVideo.play().catch(() => {});
+      projectorVideo.play().then(() => {
+        projectorVideo.muted = false;
+      }).catch(() => {});
       projPlaying = true;
     } else if (!projHovered && projPlaying) {
       projectorVideo.pause();

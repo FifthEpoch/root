@@ -83,7 +83,7 @@ export class MonitorInteraction {
 
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
-    this._reticleCenter = new THREE.Vector2(0, 0);
+    this._reticleCenter = new THREE.Vector2(0, 0.16);
 
     this.hoveredScreen = null;
     this.selectedScreen = null;
@@ -616,12 +616,18 @@ export class MonitorInteraction {
       if (!hint) {
         hint = document.createElement('div');
         hint.id = 'monitor-hint';
-        hint.style.cssText =
-          'position:fixed;top:1.2rem;left:50%;transform:translateX(-50%);' +
-          'background:rgba(0,0,0,0.6);color:#999;padding:0.6rem 1.4rem;' +
-          'border:1px solid rgba(255,255,255,0.08);border-radius:8px;' +
-          'backdrop-filter:blur(6px);font-size:0.8rem;pointer-events:none;' +
-          'z-index:100;transition:opacity 0.4s;font-family:inherit;';
+        const mobileHint = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        hint.style.cssText = mobileHint
+          ? 'position:fixed;top:1.2rem;left:1.2rem;' +
+            'background:rgba(0,0,0,0.6);color:#999;padding:0.5rem 0.8rem;' +
+            'border:1px solid rgba(255,255,255,0.08);border-radius:8px;' +
+            'backdrop-filter:blur(6px);font-size:0.7rem;pointer-events:none;' +
+            'z-index:100;transition:opacity 0.4s;font-family:inherit;max-width:52vw;'
+          : 'position:fixed;top:1.2rem;left:50%;transform:translateX(-50%);' +
+            'background:rgba(0,0,0,0.6);color:#999;padding:0.6rem 1.4rem;' +
+            'border:1px solid rgba(255,255,255,0.08);border-radius:8px;' +
+            'backdrop-filter:blur(6px);font-size:0.8rem;pointer-events:none;' +
+            'z-index:100;transition:opacity 0.4s;font-family:inherit;';
         document.body.appendChild(hint);
       }
       if (mode === 'view') {

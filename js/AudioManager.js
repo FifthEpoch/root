@@ -1,5 +1,3 @@
-import * as THREE from 'three';
-
 export class AudioManager {
   constructor(camera, rackPosition) {
     this._camera = camera;
@@ -31,6 +29,8 @@ export class AudioManager {
 
     this._wasWalking = false;
     this._wasHovering = false;
+    this._footPlaying = false;
+    this._distPlaying = false;
   }
 
   start() {
@@ -38,8 +38,6 @@ export class AudioManager {
     this._started = true;
     this._ambience.play().catch(() => {});
     this._serverNoise.play().catch(() => {});
-    this._footsteps.play().catch(() => {});
-    this._distortion.play().catch(() => {});
   }
 
   toggleMute() {
@@ -49,6 +47,10 @@ export class AudioManager {
       this._serverNoise.volume = 0;
       this._footsteps.volume = 0;
       this._distortion.volume = 0;
+      this._footsteps.pause();
+      this._distortion.pause();
+      this._footPlaying = false;
+      this._distPlaying = false;
     }
     return this._muted;
   }
@@ -72,24 +74,37 @@ export class AudioManager {
     const serverTarget = proximity * proximity * this._maxServerVol;
     this._serverNoise.volume = this._lerp(this._serverNoise.volume, serverTarget, dt * 3.0);
 
-    const footTarget = isWalking ? this._footstepVol : 0;
-    if (isWalking && !this._wasWalking) {
+    // Footsteps: only play while walking, pause when stopped
+    if (isWalking && !this._footPlaying) {
       this._footsteps.currentTime = 0;
+      this._footsteps.volume = this._footstepVol;
+      this._footsteps.play().catch(() => {});
+      this._footPlaying = true;
+    } else if (!isWalking && this._footPlaying) {
+      this._footsteps.pause();
+      this._footsteps.volume = 0;
+      this._footPlaying = false;
     }
-    this._footsteps.volume = this._lerp(this._footsteps.volume, footTarget, dt * 8.0);
-    this._wasWalking = isWalking;
 
-    const distortionTarget = isHovering ? this._distortionVol : 0;
-    if (isHovering && !this._wasHovering) {
+    // Distortion: only play while hovering, pause when not
+    if (isHovering && !this._distPlaying) {
       this._distortion.currentTime = 0;
+      this._distortion.volume = this._distortionVol;
+      this._distortion.play().catch(() => {});
+      this._distPlaying = true;
+    } else if (!isHovering && this._distPlaying) {
+      this._distortion.pause();
+      this._distortion.volume = 0;
+      this._distPlaying = false;
     }
-    this._distortion.volume = this._lerp(this._distortion.volume, distortionTarget, dt * 4.0);
+
+    this._wasWalking = isWalking;
     this._wasHovering = isHovering;
   }
 
   _lerp(current, target, speed) {
     const diff = target - current;
-    if (Math.abs(diff) < 0.001) return target;
+    if (Math.abs(diff) < 0.002) return target;
     return current + diff * Math.min(speed, 1.0);
   }
 }
