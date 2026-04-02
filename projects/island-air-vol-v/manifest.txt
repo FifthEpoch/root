@@ -1,0 +1,14 @@
+PAGE	https://www.ting.directory/island-air-vol-v
+
+[IMAGES]
+00.jpg	https://static.wixstatic.com/media/2b95c6_bcd7ca704d8c4bcab2dccca5701298e9~mv2.jpg/v1/fill/w_1044,h_1474,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/DigitalFlyer_IslandWilderness_JPG.jpg
+01.jpg	https://static.wixstatic.com/media/2b95c6_d13184e82489403a837872727dca188e~mv2.jpg/v1/crop/x_314,y_0,w_2984,h_2413/fill/w_911,h_737,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/01%20Weekender.jpg
+02.jpg	https://static.wixstatic.com/media/2b95c6_c6d72327da1b4cba94c0c7701246a311~mv2.jpg/v1/fill/w_1810,h_1358,al_c,q_90,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_c6d72327da1b4cba94c0c7701246a311~mv2.jpg
+03.jpg	https://static.wixstatic.com/media/2b95c6_51c98b77973c46bf9f49497f7867f4f0~mv2.jpg/v1/crop/x_1129,y_276,w_897,h_891/fill/w_486,h_482,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/IMG_3448_edited.jpg
+04.png	https://static.wixstatic.com/media/2b95c6_4a165c0ca1454ed594dc12b0a4443931~mv2.png/v1/crop/x_501,y_229,w_908,h_1081/fill/w_642,h_764,al_c,q_90,usm_0.66_1.00_0.01,enc_avif,quality_auto/IMG_3446_PNG.png
+05.jpg	https://static.wixstatic.com/media/2b95c6_28811998ff1e4dbbbac2e989c9d9d88e~mv2.jpg/v1/crop/x_207,y_0,w_2274,h_3024/fill/w_330,h_439,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/IMG_2704_JPG.jpg
+06.jpg	https://static.wixstatic.com/media/2b95c6_970cd433621642588064eb94d4ccad9b~mv2.jpg/v1/crop/x_0,y_0,w_1124,h_1089/fill/w_464,h_449,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/IMG_0201_JPG.jpg
+07.png	https://static.wixstatic.com/media/2b95c6_a9925b0bd6f04a9da715bf6ee9775fad~mv2.png/v1/fill/w_1200,h_900,al_c,q_90,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_a9925b0bd6f04a9da715bf6ee9775fad~mv2.png
+
+[VIDEOS]
+NONE

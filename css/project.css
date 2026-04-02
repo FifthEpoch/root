@@ -1,0 +1,264 @@
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 15px;
+  line-height: 1.55;
+  background: #fff;
+  color: #111;
+  overflow-x: hidden;
+}
+
+/* ── Canvas: fixed full-screen behind everything ── */
+
+#media-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+body.carousel-active #media-canvas {
+  pointer-events: auto;
+  cursor: grab;
+}
+
+body.carousel-active #media-canvas:active {
+  cursor: grabbing;
+}
+
+/* ── Enlarged overlay ── */
+
+#media-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+body.carousel-expanded #media-overlay {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+body.carousel-expanded #media-canvas {
+  z-index: 11;
+  pointer-events: auto;
+  cursor: default;
+}
+
+#media-close {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.8rem;
+  z-index: 12;
+  padding: 0.3rem 0.6rem;
+  font: inherit;
+  font-size: 13px;
+  color: #0000EE;
+  text-decoration: underline;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #ccc;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+body.carousel-expanded #media-close {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ── Page shell: NO z-index so blend mode can reach through to canvas ── */
+
+.page-shell {
+  position: relative;
+  max-width: 520px;
+  padding: 0 2.5rem;
+}
+
+/* ── Sticky header: solid white, extends full viewport width ── */
+
+.page-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding: 1.6rem 0 1.4rem;
+}
+
+.page-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  left: -2.5rem;
+  right: -100vw;
+  background: #fff;
+  z-index: -1;
+}
+
+.page-header::after {
+  content: '';
+  position: absolute;
+  left: -2.5rem;
+  right: -100vw;
+  bottom: -1rem;
+  height: 1rem;
+  background: linear-gradient(to bottom, #fff 0%, rgba(255, 255, 255, 0) 100%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.back-nav {
+  margin-bottom: 0.6rem;
+}
+
+.back-nav a {
+  color: #0000EE;
+  text-decoration: underline;
+  font-size: 13px;
+}
+
+.back-nav a:visited {
+  color: #551A8B;
+}
+
+.page-header h1 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+  text-transform: lowercase;
+}
+
+.page-header p {
+  font-size: 14px;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+#project-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.2rem;
+}
+
+#project-links a {
+  color: #0000EE;
+  text-decoration: underline;
+  font-size: 13px;
+}
+
+#project-links a:visited {
+  color: #551A8B;
+}
+
+/* ── Body: inverts text over images via blend mode ── */
+
+.page-body {
+  position: relative;
+  color: #fff;
+  padding-bottom: 6rem;
+}
+
+.page-body h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 2.2rem 0 0.6rem;
+  text-transform: lowercase;
+  mix-blend-mode: difference;
+}
+
+.page-body p {
+  margin-bottom: 0.85rem;
+  mix-blend-mode: difference;
+}
+
+.page-body a {
+  color: #aaf;
+  text-decoration: underline;
+}
+
+/* ── Project list (collections) ── */
+
+.project-list {
+  list-style: none;
+  margin-top: 1rem;
+}
+
+.project-list-item {
+  margin-bottom: 0.5rem;
+}
+
+.project-list-item a {
+  color: #0000EE;
+  text-decoration: underline;
+  font-size: 14px;
+}
+
+.project-list-item a:visited {
+  color: #551A8B;
+}
+
+/* Don't blend list links; keep them in the header zone */
+.page-header .project-list a {
+  color: #0000EE;
+}
+
+/* ── Embedded videos ── */
+
+.video-embed {
+  position: relative;
+  margin: 1.5rem 0;
+}
+
+.video-embed iframe {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: none;
+  display: block;
+}
+
+.video-caption {
+  font-size: 13px;
+  color: #999;
+  margin-top: 0.4rem;
+  mix-blend-mode: normal;
+}
+
+.video-caption a {
+  color: #aaf;
+  text-decoration: underline;
+}
+
+/* ── Caption in enlarged view ── */
+
+#media-caption {
+  position: fixed;
+  bottom: 2.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 13;
+  max-width: 480px;
+  text-align: center;
+  font: inherit;
+  font-size: 13px;
+  color: #555;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+body.carousel-expanded #media-caption.visible {
+  opacity: 1;
+}

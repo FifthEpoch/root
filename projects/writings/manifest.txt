@@ -1,0 +1,11 @@
+PAGE	https://www.ting.directory/writings
+
+[IMAGES]
+00.png	https://static.wixstatic.com/media/2b95c6_448371f8853d4d24a31ccc25a0df4b6f~mv2.png/v1/fill/w_906,h_1935,al_c,q_90,enc_avif,quality_auto/2b95c6_448371f8853d4d24a31ccc25a0df4b6f~mv2.png
+01.jpg	https://static.wixstatic.com/media/2b95c6_a3936bbe90784b218baa2ecafc9a4e93~mv2.jpg/v1/fill/w_932,h_1200,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_a3936bbe90784b218baa2ecafc9a4e93~mv2.jpg
+02.jpg	https://static.wixstatic.com/media/2b95c6_0e687cabd2ce4f61abf750c5f029d74a~mv2.jpg/v1/fill/w_932,h_1200,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/F8B3119B_JPG.jpg
+03.png	https://static.wixstatic.com/media/2b95c6_56036fc6eaf745f4b844b67e8b99e1c9~mv2.png/v1/fill/w_795,h_2058,al_c,q_90,enc_avif,quality_auto/icueverywhere.png
+04.png	https://static.wixstatic.com/media/2b95c6_ebb7676b14704474bf61bd3f2d2c2f17~mv2.png/v1/fill/w_1036,h_1617,al_c,q_90,enc_avif,quality_auto/icu_everywhere_zh.png
+
+[VIDEOS]
+NONE

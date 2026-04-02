@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF Viewer</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 15px;
+      background: #fff;
+      color: #111;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .pdf-header {
+      padding: 0.8rem 1.4rem;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      gap: 1.6rem;
+      flex-shrink: 0;
+    }
+    .pdf-header a {
+      color: #0000ee;
+      text-decoration: underline;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+    .pdf-header a:visited { color: #551a8b; }
+    .pdf-title {
+      font-size: 13px;
+      color: #666;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+    .pdf-body {
+      flex: 1;
+      position: relative;
+    }
+    .pdf-body embed,
+    .pdf-body iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="pdf-header">
+    <a id="back-link" href="javascript:history.back()">&larr; back</a>
+    <span class="pdf-title" id="pdf-title"></span>
+    <a id="download-link" href="" target="_blank" rel="noopener">download</a>
+  </div>
+  <div class="pdf-body" id="pdf-body"></div>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const url = params.get('url') || '';
+    const title = params.get('title') || '';
+    const backUrl = params.get('back') || '';
+
+    if (backUrl) document.getElementById('back-link').href = decodeURIComponent(backUrl);
+    document.getElementById('pdf-title').textContent = title;
+    document.title = title || 'PDF Viewer';
+    document.getElementById('download-link').href = url;
+
+    if (url) {
+      const container = document.getElementById('pdf-body');
+      const embed = document.createElement('embed');
+      embed.src = url;
+      embed.type = 'application/pdf';
+      container.appendChild(embed);
+    }
+  </script>
+</body>
+</html>

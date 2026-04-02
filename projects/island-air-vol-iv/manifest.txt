@@ -1,0 +1,17 @@
+PAGE	https://www.ting.directory/island-air-vol-iv
+
+[IMAGES]
+00.jpg	https://static.wixstatic.com/media/2b95c6_eb4e22c58d4745e5b8a1551b4c82a047~mv2.jpg/v1/fill/w_1544,h_1204,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_eb4e22c58d4745e5b8a1551b4c82a047~mv2.jpg
+01.jpg	https://static.wixstatic.com/media/2b95c6_a6a9809248214aada2751c42d5512af3~mv2.jpg/v1/crop/x_177,y_268,w_2046,h_2741/fill/w_497,h_666,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/IMG_3066_JPG.jpg
+02.jpg	https://static.wixstatic.com/media/2b95c6_79fba57b1c4e4c5eb2bdeacd391c8352~mv2.jpg/v1/fill/w_994,h_1242,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/9A27961E-9522-49A9-91DF-B8A4B1C77098_JPG.jpg
+03.png	https://static.wixstatic.com/media/2b95c6_f596a916a43e4cf3806337f4f27af6bc~mv2.png/v1/fill/w_1076,h_808,al_c,q_90,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_f596a916a43e4cf3806337f4f27af6bc~mv2.png
+04.jpg	https://static.wixstatic.com/media/2b95c6_761b2a0f53d44e1ebb2a49552f36b213~mv2.jpg/v1/fill/w_620,h_774,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_761b2a0f53d44e1ebb2a49552f36b213~mv2.jpg
+05.png	https://static.wixstatic.com/media/2b95c6_dd5ba8d818694c86a73c5eace0558d39~mv2.png/v1/fill/w_956,h_1348,al_c,q_90,usm_0.66_1.00_0.01,enc_avif,quality_auto/IMG_2949_heic.png
+06.png	https://static.wixstatic.com/media/2b95c6_2c3d284996294cceb2eba6c36defe53a~mv2.png/v1/crop/x_80,y_0,w_2254,h_1564/fill/w_737,h_511,al_c,q_90,usm_0.66_1.00_0.01,enc_avif,quality_auto/Screen%20Shot%202020-10-08%20at%204_56_34%20PM.png
+07.jpg	https://static.wixstatic.com/media/2b95c6_d0bcc2ebee2c4bbdb21047ad1368babc~mv2.jpg/v1/fill/w_1236,h_1200,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/05%20A%20Kingdom%20Lost.jpg
+08.png	https://static.wixstatic.com/media/2b95c6_62ef83296e1846038f474c82d8b2677d~mv2.png/v1/fill/w_1200,h_900,al_c,q_90,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_62ef83296e1846038f474c82d8b2677d~mv2.png
+09.png	https://static.wixstatic.com/media/2b95c6_f22666f0bef34c2a92982a064d34e8a6~mv2.png/v1/crop/x_728,y_2135,w_1139,h_1466/fill/w_341,h_439,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/IMG_2907%202_HEIC.png
+10.jpg	https://static.wixstatic.com/media/2b95c6_0378468c481f4e3a9b23ad26deeee8c1~mv2.jpg/v1/fill/w_898,h_674,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_0378468c481f4e3a9b23ad26deeee8c1~mv2.jpg
+
+[VIDEOS]
+EMBED_PRESENT	Wix VideoPlayer detected; source URL not exposed in plain HTML

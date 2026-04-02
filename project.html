@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project</title>
+  <link rel="stylesheet" href="css/project.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <canvas id="media-canvas"></canvas>
+  <div id="media-overlay"></div>
+  <button id="media-close" type="button">close</button>
+  <div id="media-caption"></div>
+  <div class="page-shell">
+    <header class="page-header">
+      <nav class="back-nav">
+        <a id="back-link" href="index.html?restore=1">&larr; back to computer lab</a>
+      </nav>
+      <h1 id="project-title"></h1>
+      <p id="project-subtitle"></p>
+      <div id="project-links"></div>
+    </header>
+    <div class="page-body" id="body-content">
+      <div class="scroll-spacer" id="scroll-spacer"></div>
+    </div>
+  </div>
+  <script type="module" src="js/project.js"></script>
+</body>
+</html>

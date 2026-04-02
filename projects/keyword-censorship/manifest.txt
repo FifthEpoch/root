@@ -1,0 +1,6 @@
+PAGE	https://www.ting.directory/keyword-censorship
+
+[IMAGES]
+
+[VIDEOS]
+EMBED_PRESENT	Wix VideoPlayer detected; source URL not exposed in plain HTML

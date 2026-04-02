@@ -1,0 +1,39 @@
+PAGE	https://www.ting.directory/taz
+
+[IMAGES]
+00.png	https://static.wixstatic.com/media/2b95c6_1bb37828ab86403681f47c19f51df145~mv2.png/v1/fill/w_668,h_936,al_c,q_90,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_1bb37828ab86403681f47c19f51df145~mv2.png
+01.jpg	https://static.wixstatic.com/media/2b95c6_14435b8f808741f198de29f9a70143ae~mv2.jpg/v1/fill/w_642,h_482,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/IMG_0008_JPG.jpg
+02.png	https://static.wixstatic.com/media/2b95c6_e2df0538facc4644a3854306ac4793b1~mv2.png/v1/fill/w_984,h_552,al_c,q_90,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_e2df0538facc4644a3854306ac4793b1~mv2.png
+03.png	https://static.wixstatic.com/media/2b95c6_42359f35cc734807a70b04ebcf280f51~mv2.png/v1/fill/w_816,h_460,al_c,q_90,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_42359f35cc734807a70b04ebcf280f51~mv2.png
+04.png	https://static.wixstatic.com/media/2b95c6_04727ab89c85439f9e1cfc67216d1854~mv2.png/v1/fill/w_542,h_306,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_04727ab89c85439f9e1cfc67216d1854~mv2.png
+05.png	https://static.wixstatic.com/media/2b95c6_cd3d4c7c335142289bcae18c3405cb2f~mv2.png/v1/fill/w_642,h_482,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_cd3d4c7c335142289bcae18c3405cb2f~mv2.png
+06.jpg	https://static.wixstatic.com/media/2b95c6_e315db3e42094fc1912854dc256cf31a~mv2.jpg/v1/fill/w_520,h_694,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_e315db3e42094fc1912854dc256cf31a~mv2.jpg
+07.jpg	https://static.wixstatic.com/media/2b95c6_b770224cbeea4684a594bf09f51284a0~mv2.jpg/v1/crop/x_0,y_585,w_3776,h_1951/fill/w_476,h_246,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_b770224cbeea4684a594bf09f51284a0~mv2.jpg
+08.png	https://static.wixstatic.com/media/2b95c6_f93be8a1771f441facede016d9942eb1~mv2.png/v1/fill/w_1056,h_792,al_c,q_90,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_f93be8a1771f441facede016d9942eb1~mv2.png
+09.png	https://static.wixstatic.com/media/2b95c6_9000ec387b6245b3a5ea36895eb24b91~mv2.png/v1/crop/x_0,y_0,w_1356,h_1664/fill/w_350,h_430,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_9000ec387b6245b3a5ea36895eb24b91~mv2.png
+10.png	https://static.wixstatic.com/media/2b95c6_96051aa743ea4ac78c7cbbf589245f23~mv2.png/v1/fill/w_500,h_882,al_c,q_90,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_96051aa743ea4ac78c7cbbf589245f23~mv2.png
+11.png	https://static.wixstatic.com/media/2b95c6_c9f5016211ad4483a784e4c510181e2a~mv2.png/v1/crop/x_0,y_254,w_534,h_1282/fill/w_204,h_490,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_c9f5016211ad4483a784e4c510181e2a~mv2.png
+12.png	https://static.wixstatic.com/media/2b95c6_32c32c82bff846a293354e19ef048b88~mv2.png/v1/crop/x_0,y_414,w_1125,h_1632/fill/w_277,h_402,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_32c32c82bff846a293354e19ef048b88~mv2.png
+13.png	https://static.wixstatic.com/media/2b95c6_cd97c86951a84da8ae671ea8afa843af~mv2.png/v1/crop/x_0,y_317,w_1591,h_1597/fill/w_976,h_979,al_c,q_90,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_cd97c86951a84da8ae671ea8afa843af~mv2.png
+14.jpg	https://static.wixstatic.com/media/2b95c6_fbaeca47d3364c6da6b8f94980e90a80~mv2.jpg/v1/fill/w_1086,h_812,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_fbaeca47d3364c6da6b8f94980e90a80~mv2.jpg
+15.jpg	https://static.wixstatic.com/media/2b95c6_4c6efb76c12b4137857395c5b52b8f40~mv2.jpg/v1/fill/w_652,h_868,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_4c6efb76c12b4137857395c5b52b8f40~mv2.jpg
+16.jpg	https://static.wixstatic.com/media/2b95c6_724b7a292a5548aeaa37d29b7f164362~mv2.jpg/v1/fill/w_452,h_604,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_724b7a292a5548aeaa37d29b7f164362~mv2.jpg
+17.jpg	https://static.wixstatic.com/media/2b95c6_28188626768b4695a8aca4deb3e8f0ad~mv2.jpg/v1/fill/w_738,h_554,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_28188626768b4695a8aca4deb3e8f0ad~mv2.jpg
+18.jpg	https://static.wixstatic.com/media/2b95c6_fef2944667704e6fb4d8a8cfa403a0e0~mv2.jpg/v1/fill/w_626,h_836,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_fef2944667704e6fb4d8a8cfa403a0e0~mv2.jpg
+19.jpg	https://static.wixstatic.com/media/2b95c6_e25661ca524244b6ad65525500b65006~mv2.jpg/v1/fill/w_508,h_678,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_e25661ca524244b6ad65525500b65006~mv2.jpg
+20.jpg	https://static.wixstatic.com/media/2b95c6_28602285ab52402896144ec6a3690544~mv2.jpg/v1/fill/w_532,h_712,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_28602285ab52402896144ec6a3690544~mv2.jpg
+21.jpg	https://static.wixstatic.com/media/2b95c6_485e8d67dbf94355ae46472c88b2615f~mv2.jpg/v1/fill/w_348,h_616,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_485e8d67dbf94355ae46472c88b2615f~mv2.jpg
+22.jpg	https://static.wixstatic.com/media/2b95c6_2f2324722e6a4e4792577ff0a9a85cfc~mv2.jpg/v1/fill/w_486,h_650,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_2f2324722e6a4e4792577ff0a9a85cfc~mv2.jpg
+23.png	https://static.wixstatic.com/media/2b95c6_e62230fa321946318973068f01361a07~mv2.png/v1/fill/w_764,h_572,al_c,q_90,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_e62230fa321946318973068f01361a07~mv2.png
+24.jpg	https://static.wixstatic.com/media/2b95c6_a419430a85534cd2840a909b45dbdb68~mv2.jpg/v1/fill/w_652,h_490,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_a419430a85534cd2840a909b45dbdb68~mv2.jpg
+25.png	https://static.wixstatic.com/media/2b95c6_6f46b0b9915346ca909a39832ea0cad1~mv2.png/v1/fill/w_684,h_512,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_6f46b0b9915346ca909a39832ea0cad1~mv2.png
+26.jpg	https://static.wixstatic.com/media/2b95c6_3a62c0b7332842b3baf02313aaa8bc29~mv2.jpg/v1/fill/w_620,h_918,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_3a62c0b7332842b3baf02313aaa8bc29~mv2.jpg
+27.jpg	https://static.wixstatic.com/media/2b95c6_9d9da269ce1f4346b6c1cb53256e9b60~mv2.jpg/v1/fill/w_824,h_1254,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_9d9da269ce1f4346b6c1cb53256e9b60~mv2.jpg
+28.jpg	https://static.wixstatic.com/media/2b95c6_6d761762a1b44cc1a7e6cef9d584cb27~mv2.jpg/v1/fill/w_744,h_990,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_6d761762a1b44cc1a7e6cef9d584cb27~mv2.jpg
+29.png	https://static.wixstatic.com/media/2b95c6_771b664776824834b455dcc79761463f~mv2.png/v1/fill/w_1224,h_710,al_c,q_90,enc_avif,quality_auto/2b95c6_771b664776824834b455dcc79761463f~mv2.png
+30.jpg	https://static.wixstatic.com/media/2b95c6_b2d81b52825243599fcef3aa4c4bf834~mv2.jpg/v1/fill/w_1244,h_1144,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_b2d81b52825243599fcef3aa4c4bf834~mv2.jpg
+31.png	https://static.wixstatic.com/media/2b95c6_4faea46d4f6a47458de1a13e6c4ccf03~mv2.png/v1/fill/w_666,h_942,al_c,q_90,usm_0.66_1.00_0.01,enc_avif,quality_auto/Screen%20Shot%202020-11-18%20at%202_43_16%20PM.png
+32.png	https://static.wixstatic.com/media/2b95c6_8e3de25aeb094c07af5bd0a65f4da42e~mv2.png/v1/crop/x_0,y_580,w_2046,h_256/fill/w_1096,h_137,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/2b95c6_8e3de25aeb094c07af5bd0a65f4da42e~mv2.png
+
+[VIDEOS]
+NONE

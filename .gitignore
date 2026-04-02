@@ -1,0 +1,17 @@
+# OS files
+.DS_Store
+
+# Unreferenced media
+media/vid/4A3AC581-3F7D-4026-AC08-6B834E735C6F.mov
+
+# Project page images served from Cloudflare R2
+# (keep conjuring-failures, eliza, humanjuices — used as 3D textures)
+projects/island-air-vol-v/images/
+projects/island-air-vol-iv/images/
+projects/the-space-that-remains/images/
+projects/keyword-censorship/images/
+projects/taz/images/
+projects/taz/pdf/
+projects/writings/images/
+projects/past-sculptures/
+projects/rl-robotics/
