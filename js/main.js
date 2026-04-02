@@ -86,6 +86,8 @@ async function init() {
     const muted = audioManager.toggleMute();
     soundOnIcon.style.display = muted ? 'none' : '';
     soundOffIcon.style.display = muted ? '' : 'none';
+    projectorVideo.volume = 0;
+    if (muted) projectorVideo.muted = true;
   });
 
   // Gyroscope toggle (mobile only, auto-enable if sensor available)
@@ -133,17 +135,33 @@ async function init() {
     window.location.href = `pdf-viewer.html?url=${cvUrl}&title=CV&back=${backUrl}`;
   });
 
-  // Projector video texture
+  // Projector: placeholder canvas with "COME CLOSER / LOOK AT ME"
   const projectorVideo = document.getElementById('projector-video');
   const videoTexture = new THREE.VideoTexture(projectorVideo);
   videoTexture.minFilter = THREE.LinearFilter;
   videoTexture.magFilter = THREE.LinearFilter;
   videoTexture.colorSpace = THREE.SRGBColorSpace;
 
+  const placeholderCanvas = document.createElement('canvas');
+  placeholderCanvas.width = 512;
+  placeholderCanvas.height = 320;
+  const pCtx = placeholderCanvas.getContext('2d');
+  pCtx.fillStyle = '#000';
+  pCtx.fillRect(0, 0, 512, 320);
+  pCtx.fillStyle = '#fff';
+  pCtx.font = 'bold 60px Impact, sans-serif';
+  pCtx.textAlign = 'center';
+  pCtx.textBaseline = 'middle';
+  pCtx.fillText('COME CLOSER', 256, 120);
+  pCtx.fillText('LOOK AT ME', 256, 200);
+  const placeholderTex = new THREE.CanvasTexture(placeholderCanvas);
+  placeholderTex.colorSpace = THREE.SRGBColorSpace;
+
   projectorScreenMesh.material = new THREE.MeshBasicMaterial({
-    map: videoTexture,
+    map: placeholderTex,
     toneMapped: false,
   });
+  let projShowingVideo = false;
 
   const projRaycaster = new THREE.Raycaster();
   const projMouse = new THREE.Vector2();
@@ -247,12 +265,19 @@ async function init() {
     }
 
     if (projHovered && !projPlaying) {
+      // Switch to video texture on first hover
+      if (!projShowingVideo) {
+        projectorScreenMesh.material.map = videoTexture;
+        projectorScreenMesh.material.needsUpdate = true;
+        projShowingVideo = true;
+      }
       projectorVideo.play().then(() => {
-        projectorVideo.muted = false;
+        if (projPlaying) projectorVideo.muted = false;
       }).catch(() => {});
       projPlaying = true;
     } else if (!projHovered && projPlaying) {
       projectorVideo.pause();
+      projectorVideo.muted = true;
       projPlaying = false;
     }
 
@@ -319,7 +344,7 @@ async function init() {
       }
     }
 
-    // Strip projector screen color during hover/view (it's not tracked by _initColorStrip)
+    // Strip projector screen color during monitor hover/view
     const projMat = projectorScreenMesh.material;
     if (isHovering || monitorInteraction.isViewing) {
       projMat.color.setRGB(0.88, 0.88, 0.88);
@@ -327,7 +352,7 @@ async function init() {
       projMat.needsUpdate = true;
     } else if (!projMat.map) {
       projMat.color.setRGB(1, 1, 1);
-      projMat.map = videoTexture;
+      projMat.map = projShowingVideo ? videoTexture : placeholderTex;
       projMat.needsUpdate = true;
     }
 
