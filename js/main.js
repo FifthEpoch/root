@@ -226,14 +226,10 @@ async function init() {
       if (rackHovered) {
         const pulse = 0.7 + 0.3 * Math.sin(elapsed * 8.0 + led.phase);
         led.mesh.material.color.setRGB(pulse, pulse, pulse);
-        led.mesh.material.emissive.setRGB(pulse, pulse, pulse);
-        led.mesh.material.emissiveIntensity = 1.0;
       } else {
         const blink = Math.sin(elapsed * led.speed + led.phase);
         const on = blink > 0.2;
         led.mesh.material.color.setHex(on ? led.baseColor : 0x111111);
-        led.mesh.material.emissive.setHex(0x000000);
-        led.mesh.material.emissiveIntensity = 0;
       }
     }
 
