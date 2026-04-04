@@ -36,13 +36,8 @@ titleEl.textContent = activeProject.title;
 subtitleEl.textContent = activeProject.subtitle || '';
 subtitleEl.style.display = activeProject.subtitle ? '' : 'none';
 
-if (!isCollectionList && Array.isArray(rootProject.children)) {
-  backLink.href = `project.html?id=${projectId}`;
-  backLink.textContent = '\u2190 back to list';
-} else {
-  backLink.href = 'index.html?restore=1';
-  backLink.textContent = '\u2190 back to computer lab';
-}
+backLink.href = 'index.html?restore=1';
+backLink.textContent = '\u2190 back to computer lab';
 
 for (const item of activeProject.links || []) {
   const a = document.createElement('a');
@@ -157,19 +152,38 @@ async function resolveMedia(projectData) {
 const media = isCollectionList ? [] : await resolveMedia(activeProject);
 const captions = activeProject.captions || [];
 
-/* ── side-by-side image layout ── */
+/* ── static image layout (single image or side-by-side) ── */
+
+const isStaticDisplay = (activeProject.sideBySide && media.length >= 2) || media.length === 1;
 
 if (activeProject.sideBySide && media.length >= 2) {
   const container = document.createElement('div');
   container.style.cssText = 'display:flex;gap:1.2rem;padding:2rem 0;justify-content:center;align-items:flex-start;';
-  for (const src of media) {
+  media.forEach((src, idx) => {
     const img = document.createElement('img');
     img.src = src;
-    img.style.cssText = 'max-width:48%;max-height:85vh;object-fit:contain;border:1px solid #eee;';
+    img.style.cssText = 'max-width:48%;max-height:85vh;object-fit:contain;border:1px solid #eee;cursor:pointer;';
+    img.addEventListener('click', () => {
+      selectedIndex = idx;
+      expandedFocus = idx;
+      expandedDragOffset = 0;
+    });
     container.appendChild(img);
-  }
+  });
   bodyContent.insertBefore(container, spacer);
-  media.length = 0;
+} else if (media.length === 1) {
+  const container = document.createElement('div');
+  container.style.cssText = 'display:flex;padding:2rem 0;justify-content:center;';
+  const img = document.createElement('img');
+  img.src = media[0];
+  img.style.cssText = 'max-width:90%;max-height:85vh;object-fit:contain;border:1px solid #eee;cursor:pointer;';
+  img.addEventListener('click', () => {
+    selectedIndex = 0;
+    expandedFocus = 0;
+    expandedDragOffset = 0;
+  });
+  container.appendChild(img);
+  bodyContent.insertBefore(container, spacer);
 }
 
 /* ── scroll spacer ── */
@@ -506,6 +520,13 @@ function animate() {
   if (!media.length) { renderer.clear(); return; }
 
   const isExpanded = selectedIndex >= 0;
+
+  // Static display (single image / side-by-side): hide carousel planes unless enlarged
+  if (isStaticDisplay && !isExpanded) {
+    for (const mesh of planes) mesh.visible = false;
+    renderer.render(scene, camera);
+    return;
+  }
 
   if (isExpanded) {
     /* ── ENLARGED HORIZONTAL GALLERY ── */

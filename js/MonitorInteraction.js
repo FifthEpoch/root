@@ -549,6 +549,21 @@ export class MonitorInteraction {
     const child = project.children && project.children[childIdx];
     if (!child) return;
 
+    if (child.href && child.href.toLowerCase().endsWith('.pdf')) {
+      this._saveLabState(projectIdx);
+      const backUrl = encodeURIComponent('index.html?restore=1');
+      const pdfUrl = encodeURIComponent(child.href);
+      const pdfTitle = encodeURIComponent(child.title);
+      window.location.href = `pdf-viewer.html?url=${pdfUrl}&title=${pdfTitle}&back=${backUrl}`;
+    } else if (child.href) {
+      window.open(child.href, '_blank', 'noopener');
+    } else {
+      this._saveLabState(projectIdx);
+      window.location.href = `project.html?id=${projectIdx}&child=${childIdx}`;
+    }
+  }
+
+  _saveLabState(monitorIdx) {
     sessionStorage.setItem('labCamera', JSON.stringify({
       x: this.savedPosition.x,
       y: this.savedPosition.y,
@@ -556,17 +571,7 @@ export class MonitorInteraction {
       yaw: this.savedYaw,
       pitch: this.savedPitch,
     }));
-
-    if (child.href && child.href.toLowerCase().endsWith('.pdf')) {
-      const backUrl = encodeURIComponent(`project.html?id=${projectIdx}`);
-      const pdfUrl = encodeURIComponent(child.href);
-      const pdfTitle = encodeURIComponent(child.title);
-      window.location.href = `pdf-viewer.html?url=${pdfUrl}&title=${pdfTitle}&back=${backUrl}`;
-    } else if (child.href) {
-      window.open(child.href, '_blank', 'noopener');
-    } else {
-      window.location.href = `project.html?id=${projectIdx}&child=${childIdx}`;
-    }
+    sessionStorage.setItem('labViewingMonitor', String(monitorIdx));
   }
 
   _navigateToProject() {
@@ -603,6 +608,12 @@ export class MonitorInteraction {
     localNormal.normalize();
 
     return localNormal;
+  }
+
+  enterViewByIndex(idx) {
+    if (idx >= 0 && idx < this.screenMeshes.length) {
+      this._enterView(this.screenMeshes[idx]);
+    }
   }
 
   _enterView(screenMesh) {

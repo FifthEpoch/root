@@ -744,6 +744,7 @@ function buildRackText(scene, rackX, rackZ, rackW, rackD, rackH) {
 
   // Render a single long repeating-text strip per row
   const BELT_H = 0.13;
+  const BELT_DEPTH = 0.025;
   const SEG_COUNT = 48;
   const fontSize = 52;
   const segWorldW = perimeter / SEG_COUNT;
@@ -760,11 +761,15 @@ function buildRackText(scene, rackX, rackZ, rackW, rackD, rackH) {
     cv.width = totalPx;
     cv.height = fontSize + 10;
     const ctx = cv.getContext('2d');
+    ctx.save();
+    ctx.translate(cv.width, 0);
+    ctx.scale(-1, 1);
     ctx.font = `bold ${fontSize}px monospace`;
     ctx.fillStyle = '#44ccff';
     ctx.textBaseline = 'middle';
     const full = text.repeat(repeats);
     ctx.fillText(full, 0, cv.height / 2);
+    ctx.restore();
     return cv;
   }
 
@@ -783,7 +788,7 @@ function buildRackText(scene, rackX, rackZ, rackW, rackD, rackH) {
         map: beltTex.clone(),
         transparent: true,
         opacity: 0,
-        side: THREE.DoubleSide,
+        side: THREE.FrontSide,
         depthWrite: false,
       });
       mat.map.wrapS = THREE.RepeatWrapping;
@@ -791,8 +796,8 @@ function buildRackText(scene, rackX, rackZ, rackW, rackD, rackH) {
       mat.map.offset.set((i + 1) / SEG_COUNT, 0);
       mat.map.needsUpdate = true;
 
-      const planeW = segWorldW * 1.03;
-      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(planeW, BELT_H), mat);
+      const segW = segWorldW * 1.03;
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(segW, BELT_H, BELT_DEPTH), mat);
       mesh.position.y = y;
       mesh.renderOrder = 999;
       scene.add(mesh);
@@ -836,7 +841,7 @@ function buildSkeletonChair(scene, gltf) {
   // Place in the corner nearest the exhibition plate (+X, +Z corner)
   const hw = ROOM_WIDTH / 2 + 2;
   const hd = ROOM_DEPTH / 2 + 2;
-  group.position.set(hw - 1.2, 0, hd - 1.0);
+  group.position.set(hw - 0.8, 0, hd - 1.7);
   group.rotation.y = -Math.PI * 0.65 - (30 * Math.PI / 180);
 
   scene.add(group);
@@ -847,7 +852,7 @@ function buildSkeletonChair(scene, gltf) {
   const hitGeo = new THREE.BoxGeometry(0.9 * hitScale, 1.4 * hitScale, 0.7 * hitScale);
   const hitMat = new THREE.MeshBasicMaterial({ visible: false });
   const hitbox = new THREE.Mesh(hitGeo, hitMat);
-  hitbox.position.set(hw - 1.2, 0.7, hd - 1.0);
+  hitbox.position.set(hw - 0.8, 0.7, hd - 1.7);
   scene.add(hitbox);
 
   return { group, hitbox };

@@ -22,6 +22,13 @@ export const projects = [
         sections: [],
       },
       {
+        title: 'Human Germline Gene Editing is Bioart: An open letter to Lulu and Nana (Simplified Chinese Translation)',
+        subtitle: '',
+        links: [],
+        href: 'https://www.hackteria.org/projects/news/open-letter-to-lulu-and-nana/',
+        sections: [],
+      },
+      {
         title: 'All the Lights are Upside Down',
         subtitle: '',
         links: [],

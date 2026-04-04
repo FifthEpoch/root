@@ -24,18 +24,16 @@ let landingRAF = null;
 
 function landingTick(prevTime) {
   landingRAF = requestAnimationFrame((now) => {
-    if (!landingVideo || landingVideo.paused) return;
-    if (landingReverse) {
-      const dt = (now - prevTime) / 1000;
-      landingVideo.currentTime = Math.max(0, landingVideo.currentTime - dt);
-      if (landingVideo.currentTime <= 0.05) {
-        landingReverse = false;
-        landingVideo.play().catch(() => {});
-      }
-      landingTick(now);
-    } else {
-      landingTick(now);
+    if (!landingVideo || !landingReverse) return;
+    const dt = Math.min((now - prevTime) / 1000, 0.1);
+    landingVideo.currentTime = Math.max(0, landingVideo.currentTime - dt);
+    if (landingVideo.currentTime <= 0.05) {
+      landingReverse = false;
+      landingVideo.currentTime = 0;
+      landingVideo.play().catch(() => {});
+      return;
     }
+    landingTick(now);
   });
 }
 
@@ -43,7 +41,6 @@ if (landingVideo && !isRestore) {
   landingVideo.addEventListener('canplay', () => {
     landingVideo.classList.add('visible');
     landingVideo.play().catch(() => {});
-    landingTick(performance.now());
   }, { once: true });
   landingVideo.addEventListener('ended', () => {
     landingReverse = true;
@@ -74,11 +71,14 @@ async function init() {
   const savedCam = restoring ? JSON.parse(sessionStorage.getItem('labCamera') || 'null') : null;
 
   let initialYaw, initialPitch;
+  const savedViewingMonitor = restoring ? sessionStorage.getItem('labViewingMonitor') : null;
+
   if (savedCam) {
     camera.position.set(savedCam.x, savedCam.y, savedCam.z);
     initialYaw = savedCam.yaw;
     initialPitch = savedCam.pitch;
     sessionStorage.removeItem('labCamera');
+    sessionStorage.removeItem('labViewingMonitor');
     window.history.replaceState({}, '', window.location.pathname);
   } else {
     camera.position.set(7.0, TABLE_HEIGHT + 0.55, tableZ + 1.2);
@@ -168,13 +168,13 @@ async function init() {
   whiteOverlay.renderOrder = 9999;
   whiteOverlay.frustumCulled = false;
 
-  // Fall phases: 'falling' → 'whiteout' → 'dropin'
+  // Fall phases: 'falling' → 'dropin'
+  // 1.5s pure fall, then 2.0s gradual white fade = 3.5s total fall
+  // then 1.5s white-to-room drop-in (no separate hold phase)
   const FALL_DUR = 3.5;
   const WHITEOUT_RAMP = 2.0;
-  const WHITEOUT_HOLD = 0.8;
-  const DROPIN_DUR = 0.6;
+  const DROPIN_DUR = 1.5;
   let doorFallPhase = 'falling';
-  let whiteoutTime = 0;
   let dropinTime = 0;
 
   const controls = new NavigationControls(camera, canvas, {
@@ -223,6 +223,16 @@ async function init() {
 
   // Gyroscope toggle (mobile only, auto-enable if sensor available)
   const gyroToggle = document.getElementById('gyro-toggle');
+  const hintMobileText = document.getElementById('hint-mobile-text');
+
+  const updateMobileHint = () => {
+    if (!hintMobileText) return;
+    if (controls.gyroEnabled) {
+      hintMobileText.textContent = 'hold & drag up/down to walk \u00b7 move phone to look around';
+    } else {
+      hintMobileText.textContent = 'hold & drag up/down to walk \u00b7 hold & drag left/right to turn';
+    }
+  };
 
   const activateGyro = async () => {
     if (!gyroToggle) return false;
@@ -230,6 +240,7 @@ async function init() {
     if (ok) {
       gyroToggle.classList.add('active');
       sessionStorage.setItem('gyroEnabled', '1');
+      updateMobileHint();
     }
     return ok;
   };
@@ -242,6 +253,7 @@ async function init() {
         controls.disableGyro();
         gyroToggle.classList.remove('active');
         sessionStorage.setItem('gyroEnabled', '0');
+        updateMobileHint();
       } else {
         await activateGyro();
       }
@@ -263,7 +275,7 @@ async function init() {
     window.location.href = `pdf-viewer.html?url=${cvUrl}&title=CV&back=${backUrl}`;
   });
 
-  // Projector: placeholder canvas with "COME CLOSER / LOOK AT ME"
+  // Projector: placeholder canvas with "COME CLOSER / TOUCH ME"
   const projectorVideo = document.getElementById('projector-video');
   const videoTexture = new THREE.VideoTexture(projectorVideo);
   videoTexture.minFilter = THREE.LinearFilter;
@@ -281,7 +293,7 @@ async function init() {
   pCtx.textAlign = 'center';
   pCtx.textBaseline = 'middle';
   pCtx.fillText('COME CLOSER', 256, 120);
-  pCtx.fillText('LOOK AT ME', 256, 200);
+  pCtx.fillText('TOUCH ME', 256, 200);
   const placeholderTex = new THREE.CanvasTexture(placeholderCanvas);
   placeholderTex.colorSpace = THREE.SRGBColorSpace;
 
@@ -556,31 +568,23 @@ async function init() {
           p.material.opacity = (0.08 + Math.random() * 0.04) * vis + 0.02;
         }
 
-        // Near end of fall, begin white ramp
+        // Phase 2: gradual white fade-in over last 2s of fall
         const rampStart = FALL_DUR - WHITEOUT_RAMP;
         if (doorFallTime > rampStart) {
           const rampT = Math.min((doorFallTime - rampStart) / WHITEOUT_RAMP, 1.0);
-          const eased = rampT * rampT * (3 - 2 * rampT);
+          // Slow ease-in: cubic for gentle start, accelerating toward end
+          const eased = rampT * rampT * rampT;
           whiteOverlayMat.opacity = eased;
           if (!whiteOverlay.parent) camera.add(whiteOverlay);
           whiteOverlay.position.set(0, 0, -0.1);
         }
 
         if (doorFallTime >= FALL_DUR) {
-          doorFallPhase = 'whiteout';
-          whiteoutTime = 0;
-          whiteOverlayMat.opacity = 1;
-          fallShaft.visible = false;
-        }
-
-      } else if (doorFallPhase === 'whiteout') {
-        whiteoutTime += dt;
-        whiteOverlayMat.opacity = 1;
-        scene.background = new THREE.Color(0xffffff);
-
-        if (whiteoutTime >= WHITEOUT_HOLD) {
+          // Transition directly to drop-in (no hold)
           doorFallPhase = 'dropin';
           dropinTime = 0;
+          whiteOverlayMat.opacity = 1;
+          fallShaft.visible = false;
           scene.background = new THREE.Color(0xd0c8b8);
 
           // Relocate door
@@ -737,6 +741,9 @@ async function init() {
     stopLandingVideo();
     overlay.classList.add('hidden');
     startLab();
+    if (savedViewingMonitor !== null) {
+      monitorInteraction.enterViewByIndex(parseInt(savedViewingMonitor, 10));
+    }
     // Restore gyro if previously enabled
     if (isMobile && sessionStorage.getItem('gyroEnabled') === '1') {
       activateGyro();
