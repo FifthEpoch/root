@@ -95,10 +95,6 @@ html, body {
   line-height: 1.7;
   letter-spacing: 0.02em;
   color: #fff;
-  margin-bottom: 0.8rem;
-}
-
-.landing-bio:last-of-type {
   margin-bottom: 2.4rem;
   font-weight: 300;
   mix-blend-mode: difference;
