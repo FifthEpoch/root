@@ -103,18 +103,6 @@ export class NavigationControls {
 
   _onWheel(e) {
     e.preventDefault();
-    if (!this.enabled) return;
-
-    const delta = -Math.sign(e.deltaY) * this.zoomSpeed;
-
-    this.camera.getWorldDirection(this._direction);
-    this._direction.y = 0;
-    this._direction.normalize();
-
-    this.camera.position.x += this._direction.x * delta;
-    this.camera.position.z += this._direction.z * delta;
-
-    this._clampPosition();
   }
 
   _onTouchStart(e) {

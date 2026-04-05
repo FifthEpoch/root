@@ -515,16 +515,17 @@ async function init() {
     }
 
     if (projHovered && !projPlaying) {
-      // Switch to video texture on first hover
       if (!projShowingVideo) {
         projectorScreenMesh.material.map = videoTexture;
         projectorScreenMesh.material.needsUpdate = true;
         projShowingVideo = true;
       }
-      projectorVideo.play().then(() => {
-        if (projPlaying) projectorVideo.muted = false;
-      }).catch(() => {});
       projPlaying = true;
+      projectorVideo.play().then(() => {
+        if (projPlaying) projectorVideo.muted = audioManager.muted ? true : false;
+      }).catch(() => {
+        projPlaying = false;
+      });
     } else if (!projHovered && projPlaying) {
       projectorVideo.pause();
       projectorVideo.muted = true;
@@ -792,10 +793,10 @@ async function init() {
 
   function startLab() {
     audioManager.start();
-    // Projector and accordion are played on-demand (hover/proximity).
-    // AudioContext unlock in AudioManager handles iOS audio restrictions.
+    // Pre-warm video/audio elements during user gesture context (mobile unlock)
     projectorVideo.muted = true;
     projectorVideo.volume = 0;
+    projectorVideo.play().then(() => projectorVideo.pause()).catch(() => {});
     accordionAudio.volume = 0;
     labUI.classList.add('visible');
     if (isMobile && mobileReticle) {
