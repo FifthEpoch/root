@@ -556,7 +556,9 @@ export class MonitorInteraction {
       const pdfTitle = encodeURIComponent(child.title);
       window.location.href = `pdf-viewer.html?url=${pdfUrl}&title=${pdfTitle}&back=${backUrl}`;
     } else if (child.href) {
-      window.open(child.href, '_blank', 'noopener');
+      this._saveLabState(projectIdx);
+      history.replaceState({}, '', 'index.html?restore=1');
+      window.location.href = child.href;
     } else {
       this._saveLabState(projectIdx);
       window.location.href = `project.html?id=${projectIdx}&child=${childIdx}`;
@@ -579,7 +581,15 @@ export class MonitorInteraction {
     const project = this._projects[idx];
 
     if (project && project.directUrl) {
-      window.open(project.directUrl, '_blank', 'noopener');
+      sessionStorage.setItem('labCamera', JSON.stringify({
+        x: this.savedPosition.x,
+        y: this.savedPosition.y,
+        z: this.savedPosition.z,
+        yaw: this.savedYaw,
+        pitch: this.savedPitch,
+      }));
+      history.replaceState({}, '', 'index.html?restore=1');
+      window.location.href = project.directUrl;
       return;
     }
 

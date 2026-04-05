@@ -18,34 +18,105 @@ if (isRestore) {
 }
 
 // Landing video: ping-pong playback (forward → reverse → forward …)
+// Forward uses native <video>. Reverse draws cached frames to a <canvas>
+// because browsers cannot seek backward efficiently (keyframe decoding).
 const landingVideo = document.getElementById('landing-video');
 let landingReverse = false;
 let landingRAF = null;
+const landingFrames = [];
+let landingCanvas = null;
+let landingCtx = null;
+let landingFrameIdx = 0;
 
-function landingTick(prevTime) {
+const LF_CAP_W = 640, LF_CAP_H = 360;
+const LF_FPS = 24;
+const LF_INTERVAL = 1000 / LF_FPS;
+let lfLastCapture = 0;
+let lfCapCanvas = null, lfCapCtx = null;
+
+function lfSetup() {
+  if (landingCanvas) return;
+  lfCapCanvas = document.createElement('canvas');
+  lfCapCanvas.width = LF_CAP_W;
+  lfCapCanvas.height = LF_CAP_H;
+  lfCapCtx = lfCapCanvas.getContext('2d', { willReadFrequently: true });
+
+  landingCanvas = document.createElement('canvas');
+  landingCanvas.width = window.innerWidth;
+  landingCanvas.height = window.innerHeight;
+  landingCtx = landingCanvas.getContext('2d');
+  landingCanvas.style.cssText =
+    'position:absolute;inset:0;width:100%;height:100%;z-index:0;opacity:0;pointer-events:none;';
+  landingVideo.parentElement.insertBefore(landingCanvas, landingVideo.nextSibling);
+}
+
+function lfCapture() {
+  lfCapCtx.drawImage(landingVideo, 0, 0, LF_CAP_W, LF_CAP_H);
+  landingFrames.push(lfCapCtx.getImageData(0, 0, LF_CAP_W, LF_CAP_H));
+}
+
+function lfDrawFrame(idx) {
+  lfCapCtx.putImageData(landingFrames[idx], 0, 0);
+
+  const vw = landingCanvas.width, vh = landingCanvas.height;
+  const iar = LF_CAP_W / LF_CAP_H, viewAR = vw / vh;
+  let dw, dh;
+  if (iar > viewAR) { dh = vh; dw = vh * iar; }
+  else              { dw = vw; dh = vw / iar; }
+  const dx = vw * 0.32 - dw / 2;
+  const dy = vh * 0.5  - dh / 2;
+
+  landingCtx.clearRect(0, 0, vw, vh);
+  landingCtx.drawImage(lfCapCanvas, 0, 0, LF_CAP_W, LF_CAP_H, dx, dy, dw, dh);
+}
+
+function lfForwardTick(now) {
+  if (!landingVideo || landingVideo.paused || landingVideo.ended) return;
+  if (now - lfLastCapture >= LF_INTERVAL) {
+    lfCapture();
+    lfLastCapture = now;
+  }
+  landingRAF = requestAnimationFrame(lfForwardTick);
+}
+
+function lfReverseTick(prev) {
   landingRAF = requestAnimationFrame((now) => {
-    if (!landingVideo || !landingReverse) return;
-    const dt = Math.min((now - prevTime) / 1000, 0.1);
-    landingVideo.currentTime = Math.max(0, landingVideo.currentTime - dt);
-    if (landingVideo.currentTime <= 0.05) {
-      landingReverse = false;
-      landingVideo.currentTime = 0;
-      landingVideo.play().catch(() => {});
-      return;
-    }
-    landingTick(now);
+    if (!landingReverse || landingFrameIdx <= 0) { lfFinish(); return; }
+    const dt = (now - prev) / 1000;
+    const skip = Math.max(1, Math.round(dt * LF_FPS));
+    landingFrameIdx = Math.max(0, landingFrameIdx - skip);
+    lfDrawFrame(landingFrameIdx);
+    if (landingFrameIdx <= 0) { lfFinish(); return; }
+    lfReverseTick(now);
   });
+}
+
+function lfFinish() {
+  landingReverse = false;
+  landingCanvas.style.opacity = '0';
+  landingVideo.style.visibility = '';
+  landingVideo.currentTime = 0;
+  landingVideo.play().catch(() => {});
+  landingFrames.length = 0;
+  lfLastCapture = performance.now();
+  landingRAF = requestAnimationFrame(lfForwardTick);
 }
 
 if (landingVideo && !isRestore) {
   landingVideo.addEventListener('canplay', () => {
+    lfSetup();
     landingVideo.classList.add('visible');
     landingVideo.play().catch(() => {});
+    lfLastCapture = performance.now();
+    landingRAF = requestAnimationFrame(lfForwardTick);
   }, { once: true });
   landingVideo.addEventListener('ended', () => {
     landingReverse = true;
     landingVideo.pause();
-    landingTick(performance.now());
+    landingFrameIdx = landingFrames.length - 1;
+    landingVideo.style.visibility = 'hidden';
+    landingCanvas.style.opacity = '1';
+    lfReverseTick(performance.now());
   });
   landingVideo.load();
 }
@@ -347,7 +418,12 @@ async function init() {
   // Rack click: desktop click or mobile tap
   const handleRackClick = () => {
     if (rackHovered && !monitorInteraction.isViewing && !monitorInteraction.isTransitioning) {
-      window.open('https://github.com/FifthEpoch', '_blank', 'noopener');
+      sessionStorage.setItem('labCamera', JSON.stringify({
+        x: camera.position.x, y: camera.position.y, z: camera.position.z,
+        yaw: controls.yaw, pitch: controls.pitch,
+      }));
+      history.replaceState({}, '', 'index.html?restore=1');
+      window.location.href = 'https://github.com/FifthEpoch';
     }
   };
   canvas.addEventListener('click', handleRackClick);
@@ -731,10 +807,18 @@ async function init() {
   function stopLandingVideo() {
     if (landingVideo) {
       landingVideo.pause();
+      landingVideo.style.visibility = '';
       landingVideo.removeAttribute('src');
       landingVideo.load();
     }
     if (landingRAF) cancelAnimationFrame(landingRAF);
+    if (landingCanvas && landingCanvas.parentElement) {
+      landingCanvas.parentElement.removeChild(landingCanvas);
+    }
+    landingCanvas = null;
+    landingCtx = null;
+    landingFrames.length = 0;
+    landingReverse = false;
   }
 
   if (restoring) {

@@ -48,8 +48,9 @@ for (const item of activeProject.links || []) {
     a.href = `pdf-viewer.html?url=${pdfUrl}&title=${pdfTitle}&back=${backUrl}`;
   } else {
     a.href = item.url;
-    a.target = '_blank';
-    a.rel = 'noopener';
+    a.addEventListener('click', () => {
+      history.replaceState({}, '', 'index.html?restore=1');
+    });
   }
   a.textContent = item.text;
   linksContainer.appendChild(a);
@@ -82,8 +83,9 @@ if (isCollectionList) {
       a.href = `pdf-viewer.html?url=${pdfUrl}&title=${pdfTitle}&back=${backUrl}`;
     } else if (child.href) {
       a.href = child.href;
-      a.target = '_blank';
-      a.rel = 'noopener';
+      a.addEventListener('click', () => {
+        history.replaceState({}, '', 'index.html?restore=1');
+      });
     } else {
       a.href = `project.html?id=${projectId}&child=${index}`;
     }
